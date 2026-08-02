@@ -412,8 +412,7 @@ function goDash(){if(!session){openLogin();return;}if(session.role==="region"||s
 
 /* ---- 區（審核員／區總監）---- */
 function refreshDistrict(){setBar('<span class="spin"></span> 載入…',false);gas("listForDistrict")(session.token).then(r=>{if(!r.ok){toast(r.error);session=null;openLogin();return;}submissionsCache=r.submissions||[];PASS_MARKS=r.passMarks;renderDistrictDash(r);}).catch(e=>toast("失敗："+e.message));}
-function renderDistrictDash(r){currentDashR=r;
-  currentDashR=r;
+function renderDistrictDash(r){currentDashR=r;ensureBackBtn();
   const list=submissionsCache,isDC=session.role==="dc",pm=PASS_MARKS;
   const distNames=INIT.districts||[];
   setBar('<button class="btn btn-sec" onclick="exitToHome()">🏠 返回</button><button class="btn btn-sec" onclick="refreshDistrict()">↻</button>'+(isDC?'<button class="btn btn-sec" onclick="renderAccounts()">👥 帳號</button>':"")+'<button class="btn btn-sec" onclick="printDistrictStats()">🖥️ 印</button>',false);
