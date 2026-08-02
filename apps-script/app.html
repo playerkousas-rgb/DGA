@@ -410,8 +410,8 @@ function doLogin(){const u=$("#l_user").value.trim(),pw=$("#l_pw").value;if(!u||
 function goDash(){if(!session){openLogin();return;}if(session.role==="region"||session.role==="superadmin")refreshRegion();else refreshDistrict();}
 
 /* ---- 區（審核員／區總監）---- */
-function refreshDistrict(){setBar('<span class="spin"></span> 載入…',false);gas("listForDistrict")(session.token).then(r=>{if(!r.ok){toast(r.error);session=null;openLogin();return;}submissionsCache=r.submissions||[];PASS_MARKS=r.passMarks;renderDistrictDash(currentDashR);}).catch(e=>toast("失敗："+e.message));}
-function renderDistrictDash(currentDashR){
+function refreshDistrict(){setBar('<span class="spin"></span> 載入…',false);gas("listForDistrict")(session.token).then(r=>{if(!r.ok){toast(r.error);session=null;openLogin();return;}submissionsCache=r.submissions||[];PASS_MARKS=r.passMarks;renderDistrictDash(r);}).catch(e=>toast("失敗："+e.message));}
+function renderDistrictDash(r){currentDashR=r;
   currentDashR=r;
   const list=submissionsCache,isDC=session.role==="dc",pm=PASS_MARKS;
   const distNames=INIT.districts||[];
