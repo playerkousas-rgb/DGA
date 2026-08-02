@@ -398,12 +398,12 @@ function groupPayload(){recompute();const f=collectFields();return{district:f.h_
 function groupSubmit(){if(!confirm("確認送出「"+ctx.groupNo+"（"+currentBranch.name+"）」？總分："+totalFromScores()))return;setBar('<span class="spin"></span> 送出…',false);gas("submitForm")(groupPayload()).then(r=>{if(r.ok){toast("✓ 已送出！編號 "+r.id);setTimeout(goHome,1500);}else toast("失敗");}).catch(e=>toast("失敗："+e.message));}
 function groupDownload(){recompute();const b=currentBranch;const A=[[INIT.year+" 優異旅團 — "+b.name+" 評分表"],["旅號："+ctx.groupNo+"　區別："+ctx.district],["最低標準",MIN_FAIL?"未達":"符合"],["總分",totalFromScores()],[]];currentBranch.blocks.forEach(bl=>{A.push([bl.title(),"得分："+(SCORES[bl.key]||0)]);(bl.data()||[]).forEach(r=>A.push(r));A.push([]);});const fn=(INIT.year+"_DGA_"+b.id+"_"+ctx.groupNo).replace(/[\\/:*?"<>|]/g,"_");if(typeof XLSX!=="undefined"){try{const ws=XLSX.utils.aoa_to_sheet(A);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,b.unit);XLSX.writeFile(wb,fn+".xlsx");return;}catch(e){}}toast("Excel 下載已開始");}
 
-/* ---- 登入（區／地域／超管）---- */
+/* ---- 登入（區／地域）---- */
 var loginMode="district";
 function openLogin(){resetTheme();ensureBackBtn();setBar('<button class="btn btn-sec" onclick="goHome()">← 返回</button>',false);renderLogin();}
-function renderLogin(){const isD=loginMode==="district",isR=loginMode==="region",isS=loginMode==="super";
-  const tabs='<div class="steps"><span class="step'+(isD?' on':'')+'" onclick="loginMode=\'district\';renderLogin()">區登入</span><span class="step'+(isR?' on':'')+'" onclick="loginMode=\'region\';renderLogin()">地域登入</span><span class="step'+(isS?' on':'')+'" onclick="loginMode=\'super\';renderLogin()" style="opacity:.6">超管</span></div>';
-  let hint="";if(isD)hint="用戶名例：SKW（審核員）／SKWDC（區總監）；預設密碼 1234";else if(isR)hint="用戶名：HKIR；預設密碼 1234";else hint="超管帳號";
+function renderLogin(){
+  const tabs='<div class="steps"><span class="step on" onclick="loginMode=\'district\';renderLogin()">區登入</span><span class="step" onclick="loginMode=\'region\';renderLogin()">地域登入</span></div>';
+  let hint="";if(loginMode==="district")hint="用戶名例：SKW（審核員）／SKWDC（區總監）；預設密碼 1234";else hint="用戶名：HKIR；預設密碼 1234";
   show('<div class="card">'+tabs+'<div style="margin-top:10px"><label class="fld"><span>用戶名</span><input type="text" id="l_user"></label><label class="fld" style="margin-top:8px"><span>密碼</span><input type="password" id="l_pw"></label><div style="margin-top:14px"><button class="btn btn-pri" onclick="doLogin()">登入 →</button></div><p style="font-size:12px;color:var(--muted);margin-top:8px">'+hint+'</p></div></div>');}
 function doLogin(){const u=$("#l_user").value.trim(),pw=$("#l_pw").value;if(!u||!pw){toast("請填用戶名及密碼");return;}setBar('<span class="spin"></span> 登入…',false);gas("login")(u,pw).then(r=>{if(r.ok){session={token:r.token,role:r.role,district:r.district,username:r.username};goDash();}else{toast(r.error||"登入失敗");setBar('<button class="btn btn-sec" onclick="goHome()">← 返回</button>',false);}}).catch(e=>toast("失敗："+e.message));}
 
