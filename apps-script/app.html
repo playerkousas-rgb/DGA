@@ -532,6 +532,26 @@ function delAcc(u){if(!confirm("刪除帳號 "+u+"？"))return;gas("deleteAccoun
 
 /* ---- 列印統計 ---- */
 function _statsHTML(title,list,pm,ov){let h='<h2>'+title+'</h2><p>港島地域 · '+INIT.year+' 優異旅團 · 生成：'+new Date().toLocaleString("zh-HK")+'</p>';if(ov){h+='<table class="dt"><thead><tr><th>區別</th><th>紀錄</th><th>待批</th><th>已審核</th><th>已送地域</th></tr></thead><tbody>';ov.forEach(o=>{const s=o.stats||{};h+='<tr><td>'+esc(o.district)+'</td><td>'+s.total+'</td><td>'+s.submitted+'</td><td>'+s.reviewed+'</td><td>'+s.confirmed+'</td></tr>';});h+='</tbody></table>';}if(list){h+='<table class="dt"><thead><tr><th>區</th><th>旅團</th><th>支部</th><th>總分</th><th>合格線</th><th>合格</th><th>狀態</th></tr></thead><tbody>';list.forEach(x=>{const line=(pm||{})[x.branchId]||0;h+='<tr><td>'+esc(x.district)+'</td><td>'+esc(x.groupNo)+'</td><td>'+esc(x.branchName)+'</td><td>'+x.total+'</td><td>'+line+'</td><td>'+(Number(x.total)>=line?"合格":"未達線")+'</td><td>'+esc(x.status)+'</td></tr>';});h+='</tbody></table>';}return h;}
+function printRegionStats(){
+  var pm=PASS_MARKS,ov=OVERVIEW;
+  var allDist=INIT.districts||[];
+  var html='<div style="padding:20px;font-family:sans-serif"><h2>全區統計</h2><p>'+new Date().toLocaleString("zh-HK")+'</p>';
+  html+='<table border="1" cellpadding="5" style="border-collapse:collapse;width:100%;font-size:13px"><thead><tr><th>區別</th><th>紀錄</th><th>待批</th><th>已審核</th><th>已送地域</th></tr></thead><tbody>';
+  ov.forEach(function(o){var s=o.stats||{};html+='<tr><td>'+esc(o.district)+'</td><td>'+s.total+'</td><td>'+s.submitted+'</td><td>'+s.reviewed+'</td><td>'+s.confirmed+'</td></tr>';});
+  html+='</tbody></table>';
+  html+='<h3>各支部統計</h3><table border="1" cellpadding="5" style="border-collapse:collapse;width:100%;font-size:13px"><thead><tr><th>區別</th>';
+  BRANCH_ORDER.forEach(function(b){html+='<th>'+b.name+'</th>';});
+  html+='<th>合計</th></tr></thead><tbody>';
+  var bk=["grasshopper","cub","scout","venture","rover"];var tot={};bk.forEach(function(k){tot[k]=0;});
+  allDist.forEach(function(d){var subs=submissionsCache.filter(function(x){return x.district===d;});var c={};bk.forEach(function(k){c[k]=0;});subs.forEach(function(x){if(c[x.branchId]!==undefined)c[x.branchId]++;});bk.forEach(function(k){tot[k]+=c[k];});
+    html+='<tr><td>'+d+'</td>';bk.forEach(function(k){html+='<td>'+c[k]+'</td>';});html+='<td><b>'+subs.length+'</b></td></tr>';});
+  html+='<tr style="background:#eee"><td><b>合計</b></td>';bk.forEach(function(k){html+='<td><b>'+tot[k]+'</b></td>';});html+='<td><b>'+submissionsCache.length+'</b></td></tr>';
+  html+='</tbody></table>';
+  html+='<h3>全部遒交紀錄</h3><table border="1" cellpadding="5" style="border-collapse:collapse;width:100%;font-size:12px"><thead><tr><th>區</th><th>旅團</th><th>支部</th><th>總分</th><th>合格</th><th>狀態</th></tr></thead><tbody>';
+  submissionsCache.forEach(function(x){var line=pm[x.branchId]||0;html+='<tr><td>'+esc(x.district)+'</td><td>'+esc(x.groupNo)+'</td><td>'+esc(x.branchName)+'</td><td>'+x.total+'</td><td>'+(Number(x.total)>=line?"合格":"未達線")+'</td><td>'+esc(x.status)+'</td></tr>';});
+  html+='</tbody></table><p style="text-align:center;color:#999;font-size:11px;margin-top:20px">Scout System</p></div>';
+  show(html);setBar('<button class="btn btn-sec" onclick="goDash()">← 返回</button><button class="btn btn-pri" onclick="window.print()">🖨️ 列印</button>',false);ensureBackBtn();
+}
 function printDistrictStats(){
   var pm=PASS_MARKS;
   var html='<div style="padding:20px;font-family:sans-serif"><h2>'+session.district+' 區統計</h2><p>'+new Date().toLocaleString("zh-HK")+'</p>';
