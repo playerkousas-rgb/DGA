@@ -310,7 +310,7 @@ function getAccount(username){const v=_sh(SHEET_ACC).getDataRange().getValues();
 function allAccounts(){return _sh(SHEET_ACC).getDataRange().getValues().slice(1).filter(r=>r[0]).map(r=>({username:r[0],password:r[1],role:r[2],district:r[3],email:r[4]}));}
 
 /* ===== 網頁 / API ===== */
-function doGet(){const _html=Utilities.newBlob(Utilities.base64Decode(APP_B64)).getDataAsString();return HtmlService.createHtmlOutput(_html).setTitle('2026 優異旅團獎勵計劃').addMetaTag('viewport','width=device-width,initial-scale=1').setXFrameOptions(HtmlService.XFrameOptionsMode.ALLOWALL);}
+function doGet(){const _html=Utilities.newBlob(Utilities.base64Decode(APP_B64)).getDataAsString();return HtmlService.createHtmlOutput(_html).setTitle('2026 優異旅團獎勵計劃').addMetaTag('viewport','width=device-width,initial-scale=1');}
 function doPost(e){
   const out=o=>ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
   try{const b=JSON.parse(e.postData.contents);const fn=b.action,args=b.args||[];
