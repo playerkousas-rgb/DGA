@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 優異旅團獎勵計劃 — 評分表 APP</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{
+  --green:#1b5e20; --green2:#2e7d32; --greenL:#e8f5e9; --gold:#c8a24a;
+  --ink:#1f2d27; --muted:#5f6b65; --line:#d7e0d8; --bg:#f4f7f4; --card:#ffffff;
+  --red:#c0392b; --amber:#b9770e;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:15px;line-height:1.5}
+header.top{position:sticky;top:0;z-index:40;background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.top-in{max-width:980px;margin:0 auto;padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.top-in h1{font-size:16px;margin:0;font-weight:700;letter-spacing:.5px}
+.top-in .sub{font-size:12px;opacity:.9}
+.tabs{max-width:980px;margin:8px auto 0;padding:0 10px;display:flex;gap:6px;flex-wrap:wrap}
+.tab{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.25);padding:7px 13px;border-radius:20px;font-size:13px;cursor:pointer;font-weight:600;transition:.15s}
+.tab:hover{background:rgba(255,255,255,.28)}
+.tab.active{background:#fff;color:var(--green);border-color:#fff}
+.gear{margin-left:auto;background:rgba(255,255,255,.18);border:none;color:#fff;width:38px;height:38px;border-radius:50%;font-size:18px;cursor:pointer}
+main{max-width:980px;margin:14px auto 70px;padding:0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.sec-title{font-size:15px;font-weight:800;color:var(--green);margin:18px 0 8px;padding:7px 12px;background:var(--greenL);border-radius:8px;border-left:5px solid var(--green)}
+.blk{border:1px solid var(--line);border-radius:10px;padding:11px 12px;margin:10px 0;background:#fcfdfc}
+.blk-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:700;font-size:14px;color:var(--ink)}
+.blk-h .pts{font-size:12px;color:var(--green2);font-weight:700;background:var(--greenL);padding:2px 8px;border-radius:10px}
+.badge{margin-left:auto;background:var(--green);color:#fff;border-radius:20px;padding:3px 12px;font-size:13px;font-weight:800;min-width:46px;text-align:center}
+.note,.ratio-note{font-size:12px;color:var(--muted);margin:6px 0}
+.bands{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.band{font-size:11px;background:#eef3ee;border:1px solid var(--line);padding:3px 8px;border-radius:8px;color:var(--muted)}
+.band.hit{background:var(--green);color:#fff;border-color:var(--green);font-weight:700}
+.blk-detail{font-size:12.5px;color:var(--green2);background:var(--greenL);padding:6px 10px;border-radius:8px;margin-top:8px;font-weight:600}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:6px}
+.fld{display:flex;flex-direction:column;gap:3px}
+.fld>span{font-size:12px;color:var(--muted);font-weight:600}
+input[type=text],input[type=number],select{width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#fff;color:var(--ink)}
+input:focus,select:focus{outline:none;border-color:var(--green2);box-shadow:0 0 0 3px rgba(46,125,50,.12)}
+.ro{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.ro b{color:var(--green);font-size:16px}
+.yn-list{display:grid;grid-template-columns:1fr;gap:5px;margin-top:6px}
+.yn{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.yn-l{font-size:13px}
+.yn-l em{color:var(--green2);font-style:normal;font-weight:700;font-size:11px}
+.yn-o{display:flex;gap:10px}
+.yn-o label{font-size:13px;display:flex;gap:3px;align-items:center;cursor:pointer}
+table.dt{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}
+table.dt th{background:var(--green);color:#fff;padding:7px;text-align:left;font-weight:600;font-size:12px;white-space:nowrap}
+table.dt td{padding:4px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.dt td.sc,table.dt th.sc{text-align:center;width:54px}
+table.dt td.rs{text-align:center;font-weight:700;color:var(--green);background:var(--greenL)}
+.tblwrap{overflow-x:auto}
+.min-std{display:grid;gap:6px;margin-top:6px}
+.fail{color:var(--red);font-weight:800}
+.pass{color:var(--green);font-weight:800}
+footer.bar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#fff;border-top:1px solid var(--line);box-shadow:0 -2px 12px rgba(0,0,0,.08)}
+.bar-in{max-width:980px;margin:0 auto;padding:8px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.total-box{display:flex;flex-direction:column;line-height:1.1}
+.total-box .lbl{font-size:11px;color:var(--muted)}
+.total-box .val{font-size:24px;font-weight:900;color:var(--green)}
+.total-box .pf{font-size:12px}
+.bar-btns{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:none;border-radius:9px;padding:10px 15px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn-pri{background:var(--green);color:#fff}.btn-pri:hover{background:var(--green2)}
+.btn-sec{background:#eef3ee;color:var(--ink);border:1px solid var(--line)}
+.btn-sec:hover{background:#e2eae3}
+.btn-gold{background:var(--gold);color:#fff}
+.dist-email{font-size:12px;color:var(--muted);background:var(--greenL);padding:5px 10px;border-radius:8px;margin-top:6px}
+.dist-email b{color:var(--green2)}
+/* settings modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:80;display:none;align-items:flex-start;justify-content:center;padding:30px 12px;overflow:auto}
+.modal.open{display:flex}
+.modal-box{background:#fff;border-radius:14px;max-width:560px;width:100%;padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.modal-box h3{margin:0 0 4px;color:var(--green)}
+.modal-box p{font-size:12.5px;color:var(--muted);margin:0 0 12px}
+.set-row{display:grid;grid-template-columns:120px 1fr;gap:8px;margin-bottom:8px;align-items:center}
+.set-row label{font-size:13px;font-weight:600}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.flag{font-size:11px;color:var(--amber);background:#fdf3e3;border:1px solid #f0dcb1;padding:5px 9px;border-radius:7px;margin-top:6px}
+@media(max-width:600px){
+  .top-in h1{font-size:14px}
+  .blk-h{font-size:13px}
+  .total-box .val{font-size:20px}
+  .btn{padding:9px 11px;font-size:12px}
+}
+/* view toggle */
+.viewtoggle{display:flex;background:rgba(255,255,255,.18);border-radius:20px;padding:3px;margin-left:6px}
+.vt{background:transparent;border:none;color:#fff;padding:6px 12px;border-radius:16px;font-size:13px;font-weight:700;cursor:pointer}
+.vt.active{background:#fff;color:var(--green)}
+/* dashboard */
+.dash-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.dash-bar .fld{min-width:150px;flex:1}
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.stat .n{font-size:22px;font-weight:900;color:var(--green)}
+.stat .l{font-size:11px;color:var(--muted)}
+.stat.warn .n{color:var(--amber)}
+.stat.ok .n{color:var(--green2)}
+.dtable{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:13px}
+.dtable th{background:var(--green);color:#fff;padding:9px 8px;text-align:left;font-weight:600;white-space:nowrap;position:sticky;top:0}
+.dtable td{padding:8px;border-top:1px solid var(--line);vertical-align:middle}
+.dtable tr:hover td{background:var(--greenL)}
+.pill{display:inline-block;padding:2px 9px;border-radius:11px;font-size:11px;font-weight:700;white-space:nowrap}
+.pill-draft{background:#eee;color:#666}
+.pill-sub{background:#dbeafe;color:#1e40af}
+.pill-app{background:#dcfce7;color:#166534}
+.pill-fail{background:#fee2e2;color:#991b1b}
+.pill-pass{background:#dcfce7;color:#166534}
+.hint{font-size:11px}
+.hint.warn{color:var(--amber);font-weight:700}
+.row-act{display:flex;gap:4px;flex-wrap:wrap}
+.mini{font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600}
+.mini:hover{background:var(--greenL)}
+.mini.pri{background:var(--green);color:#fff;border-color:var(--green)}
+.mini.del{color:var(--red)}
+.dwrap{overflow-x:auto}
+.region-box{background:var(--greenL);border:1px solid #cfe3d0;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:13px}
+.region-box b{color:var(--green2)}
+.empty{padding:40px 20px;text-align:center;color:var(--muted);background:#fff;border:1px dashed var(--line);border-radius:12px}
+@media print{
+  header.top,footer.bar,#dashboardView,.viewtoggle,.gear,.tabs,.bar-btns,.btn{display:none!important}
+  body{background:#fff}
+  main{margin:0;max-width:100%}
+  .card,.blk{box-shadow:none;break-inside:avoid}
+  .badge{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  input,select{border:1px solid #ccc!important;background:#fff!important;color:#000!important}
+  .blk-detail,.band,.badge,.sec-title{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <h1>🏕️ 2026 優異旅團獎勵計劃</h1>
+    <span class="sub">港島地域 · 評選期 2025-01-01 至 2025-12-31</span>
+    <div class="viewtoggle">
+      <button class="vt active" id="vt_form" onclick="switchView('form')">📝 評分表</button>
+      <button class="vt" id="vt_dash" onclick="switchView('dashboard')">🗂️ 區概覽</button>
+    </div>
+    <button class="gear" onclick="openSettings()" title="設定各區提交電郵">⚙</button>
+  </div>
+  <div class="tabs" id="tabs"></div>
+</header>
+
+<main>
+  <div id="formView"><div id="form"></div></div>
+  <div id="dashboardView" style="display:none"></div>
+</main>
+
+<footer class="bar" id="formBar">
+  <div class="bar-in">
+    <div class="total-box">
+      <span class="lbl">總分</span>
+      <span class="val" id="totalVal">0</span>
+      <span class="pf" id="pfVal">—</span>
+    </div>
+    <div class="bar-btns">
+      <button class="btn btn-sec" onclick="window.print()">🖨️ 列印 / PDF</button>
+      <button class="btn btn-sec" onclick="exportSheet()">⬇️ 下載 Excel</button>
+      <button class="btn btn-gold" onclick="saveToRegistry()">💾 儲存至區概覽</button>
+      <button class="btn btn-pri" onclick="submitEmail()">✉️ 提交到區電郵</button>
+    </div>
+  </div>
+</footer>
+
+<!-- settings -->
+<div class="modal" id="setModal">
+  <div class="modal-box">
+    <h3>⚙️ 設定 — 各區提交電郵綁定</h3>
+    <p>為港島地域 7 區各自填寫提交電郵（儲存於本機瀏覽器）。用戶喺表格揀選所屬區後，撳「提交到區電郵」就會自動寄去嗰區綁定嘅電郵。</p>
+    <div id="setRows"></div>
+    <div class="flag">ℹ️ 提交方式為「mailto」：會開啟你裝置嘅電郵程式，收件人、主旨同分數摘要已自動填好，並同時下載已填好嘅 Excel 供夾附。唔需要任何伺服器或戶口。</div>
+    <div class="modal-btns">
+      <button class="btn btn-sec" onclick="closeSettings()">取消</button>
+      <button class="btn btn-pri" onclick="saveSettings()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ===================== 基本資料 ===================== */
+const YEAR=2026, EVAL_YEAR=YEAR-1;
+// 地域電郵（批核後轉交目的地）；畀我地址後填喺下面即全域預設。留空則用戶可喺「區概覽」逐部裝置設定。
+const REGION_EMAIL="";
+const DISTRICTS=[
+  /* 想做「全域預設」（所有裝置都用同一組電郵），直接喺下面 email:"" 填上各區電郵即可。
+     留空嘅話，用戶可喺 APP 右上角 ⚙「設定」逐部裝置綁定（儲存於瀏覽器本機）。 */
+  {id:"is_west",name:"港島西區",email:""},
+  {id:"vic_city",name:"維多利亞城區",email:""},
+  {id:"is_south",name:"港島南區",email:""},
+  {id:"wanchai",name:"灣仔區",email:""},
+  {id:"is_north",name:"港島北區",email:""},
+  {id:"shaukiwan",name:"筲箕灣區",email:""},
+  {id:"chaiziwan",name:"柴灣區",email:""},
+];
+
+/* ===================== 工具函數 ===================== */
+const $=s=>document.querySelector(s);
+const $$=s=>Array.from(document.querySelectorAll(s));
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function get(n){
+  const els=document.querySelectorAll(`[name="${n}"]`);
+  if(els.length===0)return "";
+  // radio group（有／無 等）：傳回已選取嘅值
+  if(els.length>1||els[0].type==="radio"){
+    for(const el of els) if(el.checked) return el.value;
+    return "";
+  }
+  return els[0].value;
+}
+function num(n){const v=get(n);return v===""?0:(parseFloat(v)||0);}
+function str(n){return get(n);}
+function setText(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+function setHTML(id,h){const e=document.getElementById(id);if(e)e.innerHTML=h;}
+function tierScore(v,tiers){let r=0;for(const[t,s]of tiers)if(v>=t)r=s;return r;}
+
+function textField(n,l,ph,req){return `<label class="fld"><span>${l}${req?' <span style="color:#c0392b">*</span>':''}</span><input type="text" name="${n}" placeholder="${ph||''}"></label>`;}
+function numField(n,l){return `<label class="fld"><span>${l}</span><input type="number" inputmode="numeric" min="0" name="${n}"></label>`;}
+function selField(n,l,opts,req){return `<label class="fld"><span>${l}${req?' <span style="color:#c0392b">*</span>':''}</span><select name="${n}"><option value=""></option>${opts.map(o=>`<option>${o}</option>`).join("")}</select></label>`;}
+function ynField(n,l,p){return `<div class="yn"><span class="yn-l">${l} <em>(${p}分)</em></span><span class="yn-o"><label><input type="radio" name="${n}" value="有"> 有</label><label><input type="radio" name="${n}" value="無"> 無</label></span></div>`;}
+
+/* ===================== 區塊產生器 ===================== */
+function blockMembers(cfg){
+  return {key:"members",section:"甲",cfg,
+    title(){return "1. 成員人數";},
+    max(){return cfg.max;},
+    render(){return `
+      <div class="blk"><div class="blk-h"><span>${this.title()}</span><span class="pts">[佔${cfg.max}分]</span><span class="badge" id="sc_members">0</span></div>
+      <div class="grid2">
+        ${numField("members_mBoy","青少年成員 男（人）")}
+        ${numField("members_mGirl","青少年成員 女（人）")}
+        <div class="ro"><span>全團合計</span><b id="members_total">0</b><span>人</span></div>
+        ${numField("members_lBoy","領袖 男（人）")}
+        ${numField("members_lGirl","領袖 女（人）")}
+        ${numField("members_appoint","持有委任書（人）")}
+        ${numField("members_temp","持有暫許委任書（人）")}
+        ${numField("members_wood","領袖持有木章（人）")}
+      </div>
+      <div class="bands" id="members_bands"></div>
+      <div class="ratio-note">領袖與成員比例：1位領袖最多對8名成員 → 達標得2分</div>
+      <div class="blk-detail" id="det_members"></div></div>`;},
+    score(){
+      const mBoy=num("members_mBoy"),mGirl=num("members_mGirl"),total=mBoy+mGirl;
+      const lBoy=num("members_lBoy"),lGirl=num("members_lGirl"),ltotal=lBoy+lGirl;
+      const ap=num("members_appoint"),tp=num("members_temp"),atotal=ap+tp;
+      const wood=num("members_wood");
+      setText("members_total",total);
+      const ms=tierScore(total,cfg.memberTiers),ls=ltotal<2?0:(ltotal>=4?3:2);
+      const as=atotal<1?0:(atotal>=2?2:1),rs=(ltotal>0&&total/ltotal<=8)?2:0,ws=wood<1?0:(wood>=2?2:1);
+      // bands highlight
+      setHTML("members_bands",cfg.bands.map((b,i)=>`<span class="band ${cfg.hitIdx===i&&total>0?'hit':''}">${b}</span>`).join(""));
+      // recompute hit
+      const bandsEl=$("#members_bands");
+      if(bandsEl){let hit=-1;cfg.tierLabels.forEach((t,i)=>{if(total>=t)hit=i;});$$(".band",bandsEl).forEach((el,i)=>el.classList.toggle("hit",i===hit&&total>0));}
+      const score=ms+ls+as+rs+ws;
+      setHTML("det_members",`成員人數 ${ms} ＋ 領袖人數 ${ls} ＋ 委任書 ${as} ＋ 比例 ${rs} ＋ 木章 ${ws} ＝ <b>${score}/${cfg.max}</b>`);
+      return score;
+    },
+    data(){return [["青少年成員 男（人）",num("members_mBoy")],["女（人）",num("members_mGirl")],["領袖 男（人）",num("members_lBoy")],["女（人）",num("members_lGirl")],["持有委任書（人）",num("members_appoint")],["暫許委任書（人）",num("members_temp")],["木章（人）",num("members_wood")]];}
+  };
+}
+
+function blockProgressRatio(cfg){
+  return {key:"progress",section:"甲",cfg,
+    title(){return cfg.title;},
+    max(){return cfg.max;},
+    render(){return `
+      <div class="blk"><div class="blk-h"><span>${cfg.title}</span><span class="pts">[佔${cfg.max}分]</span><span class="badge" id="sc_progress">0</span></div>
+      <div class="note">${cfg.note}</div>
+      <div class="grid2">${cfg.items.map((it,i)=>numField("progress_"+i,it.n+" 人次")).join("")}</div>
+      <div class="bands">${cfg.bands.map(b=>`<span class="band">${b}</span>`).join("")}</div>
+      <div class="blk-detail" id="det_progress"></div></div>`;},
+    score(){
+      let sum=0;cfg.items.forEach((it,i)=>sum+=num("progress_"+i));
+      const total=num("members_mBoy")+num("members_mGirl");
+      const ratio=total>0?sum/total:0;
+      const sc=total>0?tierScore(ratio,cfg.tiers):0;
+      setHTML("det_progress",`考獲人次合計 ${sum}，佔全團 ${total} 人 = ${(ratio*100).toFixed(0)}% → <b>${sc}/${cfg.max}</b>`);
+      return sc;
+    },
+    data(){return cfg.items.map((it,i)=>[it.n+" 人次",num("progress_"+i)]);}
+  };
+}
+
+function blockProgressSum(cfg){
+  return {key:"progress",section:"甲",cfg,
+    title(){return cfg.title;},
+    max(){return "∞";},
+    render(){return `
+      <div class="blk"><div class="blk-h"><span>${cfg.title}</span><span class="pts">[分數不設上限]</span><span class="badge" id="sc_progress">0</span></div>
+      <div class="note">${cfg.note}</div>
+      <div class="grid2">${cfg.items.map((it,i)=>numField("progress_"+i,it.n+"（"+it.pts+"分／位）")).join("")}</div>
+      <div class="blk-detail" id="det_progress"></div></div>`;},
+    score(){let sc=0;cfg.items.forEach((it,i)=>sc+=num("progress_"+i)*it.pts);setHTML("det_progress",`合共 <b>${sc}</b> 分（不設上限）`);return sc;},
+    data(){return cfg.items.map((it,i)=>[it.n,num("progress_"+i)]);}
+  };
+}
+
+function blockTopAward(cfg){
+  // cfg.scoreItems (optional): indices whose contribution counts toward total
+  // 用於深資/樂行 — 官方模板總分只計 K74（3分獎章），不計 K73（1分獎章）
+  const countedIdx = cfg.scoreItems || cfg.items.map((_,i)=>i);
+  return {key:"topaward",section:"甲",cfg,
+    title(){return cfg.title;},
+    max(){return "∞";},
+    render(){return `
+      <div class="blk"><div class="blk-h"><span>${cfg.title}</span><span class="pts">[分數不設上限]</span><span class="badge" id="sc_topaward">0</span></div>
+      <div class="note">${cfg.note}</div>
+      <div class="grid2">${cfg.items.map((it,i)=>numField("topaward_"+i,it.n+"（"+it.pts+"分／位）")).join("")}</div>
+      <div class="blk-detail" id="det_topaward"></div></div>`;},
+    score(){
+      let counted=0;
+      cfg.items.forEach((it,i)=>{if(countedIdx.includes(i))counted+=num("topaward_"+i)*it.pts;});
+      let html=`計入總分：<b>${counted}</b> 分（不設上限）`;
+      if(countedIdx.length<cfg.items.length){
+        const cName=cfg.items[countedIdx[0]].n;
+        const oName=cfg.items.find((_,i)=>!countedIdx.includes(i)).n;
+        html+=`<br><span style="color:#b9770e">⚠ 依官方 Excel 模板，總分只計「${cName}」；「${oName}」資料已記錄但不計入總分（與官方模板 N18 公式一致，疑似模板筆誤，請向地域秘書處確認）。</span>`;
+      }
+      setHTML("det_topaward",html);
+      return counted;
+    },
+    data(){return cfg.items.map((it,i)=>[it.n+"（"+it.pts+"分／位，"+(countedIdx.includes(i)?"計入":"不計入")+"）",num("topaward_"+i)]);}
+  };
+}
+
+function blockTopAwardCub(cfg){
+  // 幼童軍：支部最高獎章（金紫荊）直接取自進度性獎章第4項
+  return {key:"topaward",section:"甲",cfg,
+    title(){return cfg.title;},
+    max(){return "∞";},
+    render(){return `
+      <div class="blk"><div class="blk-h"><span>${cfg.title}</span><span class="pts">[分數不設上限]</span><span class="badge" id="sc_topaward">0</span></div>
+      <div class="note">${cfg.note}</div>
+      <div class="blk-detail" id="det_topaward"></div></div>`;},
+    score(){const v=num("progress_3");setHTML("det_topaward",`金紫荊獎章 ${v} 人 × 1 = <b>${v}</b> 分（不設上限；數值取自上面「進度性獎章」金紫荊一欄）`);return v;},
+    data(){return [["金紫荊獎章（人）",num("progress_3")]];}
+  };
+}
+
+function blockAdmin(items,max){
+  return {key:"admin",section:"乙",
+    title(){return "（乙）行政與財務管理 — 期間可供審閱的記錄";},
+    max(){return max;},
+    render(){return `
+      <div class="blk"><div class="blk-h"><span>（乙）行政與財務管理 — 期間可供審閱的記錄</span><span class="pts">[共${max}分]</span><span class="badge" id="sc_admin">0</span></div>
+      <div class="yn-list">${items.map((it,i)=>ynField("admin_"+it.k,it.n,it.p)).join("")}</div>
+      <div class="blk-detail" id="det_admin"></div></div>`;},
+    score(){let s=0;items.forEach(it=>{if(str("admin_"+it.k)==="有")s+=it.p;});setHTML("det_admin",`合共 <b>${s}/${max}</b> 分`);return s;},
+    data(){return items.map(it=>[it.n+"（"+it.p+"分）",str("admin_"+it.k)]);}
+  };
+}
+function ADMIN(items){return items.map((it,i)=>({k:"a"+i,n:it.n,p:it.p}));}
+
+function blockMeeting(){
+  return {key:"meeting",section:"丙",
+    title(){return "1. 團集會";},
+    max(){return 20;},
+    render(){return `
+      <div class="blk"><div class="blk-h"><span>1. 團集會</span><span class="pts">[佔20分]</span><span class="badge" id="sc_meeting">0</span></div>
+      <div class="note">每次集會得2分，最高可獲20分。</div>
+      <div class="grid2">${numField("meeting_n","常規團集會 次數")}</div>
+      <div class="blk-detail" id="det_meeting"></div></div>`;},
+    score(){const n=num("meeting_n");const sc=Math.min(n*2,20);setHTML("det_meeting",`${n} 次 × 2 = <b>${sc}/20</b>`);return sc;},
+    data(){return [["常規團集會 次數",num("meeting_n")]];}
+  };
+}
+
+function mkTable(o){
+  const cap=(o.max==="∞")?Infinity:o.max;
+  const block={key:o.key,section:o.section||"丙",cfg:o,
+    title(){return o.title;},
+    max(){return o.max;},
+    render(){
+      const head=o.columns.map(c=>`<th style="${c.w?'width:'+c.w:''}">${c.label}</th>`).join("")+'<th class="sc">得分</th>';
+      let body="";
+      for(let i=0;i<o.rows;i++){
+        let tds=o.columns.map(c=>{
+          const nm=`${o.key}_${i}_${c.k}`;
+          if(c.type==="select")return `<td><select name="${nm}"><option value=""></option>${c.options.map(op=>`<option>${op}</option>`).join("")}</select></td>`;
+          if(c.type==="number")return `<td><input type="number" inputmode="numeric" min="0" name="${nm}"></td>`;
+          return `<td><input type="text" name="${nm}"></td>`;
+        }).join("")+`<td class="rs" id="${o.key}_${i}_rs">0</td>`;
+        body+=`<tr>${tds}</tr>`;
+      }
+      return `<div class="blk"><div class="blk-h"><span>${o.title}</span><span class="pts">${typeof o.max==="number"?"[佔"+o.max+"分]":"[分數不設上限]"}</span><span class="badge" id="sc_${o.key}">0</span></div>${o.note?`<div class="note">${o.note}</div>`:""}<div class="tblwrap"><table class="dt"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div><div class="blk-detail" id="det_${o.key}"></div></div>`;
+    },
+    score(){
+      let sum=0;
+      for(let i=0;i<o.rows;i++){
+        const row={};o.columns.forEach(c=>{row[c.k]=str(`${o.key}_${i}_${c.k}`);});
+        const filled=row[o.primary||o.columns[0].k];
+        let rs=0;if(filled&&filled.trim()!=="")rs=o.rowScore(row,i);
+        sum+=rs;setText(`${o.key}_${i}_rs`,rs);
+      }
+      const sc=Math.min(sum,cap);
+      setHTML("det_"+o.key,cap===Infinity?`合共 <b>${sc}</b> 分（不設上限）`:`合共 <b>${sc}/${o.max}</b> 分`);
+      return sc;
+    },
+    data(){
+      const rows=[o.columns.map(c=>c.label).concat(["得分"])];
+      for(let i=0;i<o.rows;i++){
+        const r=o.columns.map(c=>str(`${o.key}_${i}_${c.k}`));
+        const filled=str(`${o.key}_${i}_${o.primary||o.columns[0].k}`);
+        let rs=0;if(filled&&filled.trim()!=="")rs=o.rowScore(Object.fromEntries(o.columns.map(c=>[c.k,str(`${o.key}_${i}_${c.k}`)])),i);
+        rows.push(r.concat([rs]));
+      }
+      return rows;
+    }
+  };
+  return block;
+}
+
+const COL={
+  date:{k:"date",label:"日期",type:"text",w:"92px"},
+  name:{k:"name",label:"活動名稱",type:"text"},
+  ppl:{k:"ppl",label:"參加人數",type:"number",w:"84px"},
+  result:{k:"result",label:"成績",type:"text",w:"100px"},
+};
+function catCol(opts){return {k:"cat",label:"類別",type:"select",options:opts,w:"120px"};}
+function nameCol(l){return {k:"name",label:l||"比賽項目",type:"text"};}
+
+/* 活動表：固定每項得分 */
+function flatActivity(key,title,max,rows,pts,note){return mkTable({key,title,max,note,section:"丙",columns:[COL.date,COL.name,COL.ppl],rows,primary:"date",rowScore:()=>pts});}
+/* 活動表：按類別計分（活動/訓練 等） */
+function catActivity(key,title,max,rows,catOpts,actMap,note){return mkTable({key,title,max,note,section:"丙",columns:[COL.date,catCol(catOpts),COL.name,COL.ppl],rows,primary:"date",rowScore:r=>actMap[r.cat]||0});}
+/* 社區服務 */
+function serviceBlock(){return mkTable({key:"service",title:"4. 團參與旅團、區、地域及總會安排之社區服務",max:6,section:"丙",note:"每項社區服務 2分，學校／旅部服務 1分，最高 6分。",columns:[COL.date,catCol(["社區服務","學校 / 旅部服務"]),COL.name,COL.ppl],rows:6,primary:"date",rowScore:r=>(r.cat==="社區服務"?2:1)});}
+/* 區／地域／總會比賽成績（不設上限） */
+function compMulti(){return mkTable({key:"comp",title:"6. 區、地域及總會比賽之成績",max:"∞",section:"丙",note:"區比賽冠／亞／季或優異 2分；地域及總會比賽 3分。",columns:[nameCol("比賽項目"),catCol(["區比賽","地域及總會比賽"]),COL.result],rows:5,primary:"name",rowScore:r=>(r.cat==="區比賽"?2:3)});}
+/* 全港性支部比賽（單選，5分） */
+function compSingle(events,label){return mkTable({key:"compsingle",title:"5. 成員參與全港性支部比賽／選拔賽",max:5,section:"丙",note:"每項 5分（只參與即得）。",columns:[COL.date,{k:"name",label:label,type:"select",options:events}],rows:1,primary:"name",rowScore:()=>5});}
+/* 樂行 — 寰宇童軍計劃 */
+function roverMoot(){return mkTable({key:"moot",title:"7. 成員參與寰宇童軍計劃",max:"∞",section:"丙",note:"每位參與成員得 1分（以文字描述為準；不設上限）。",columns:[nameCol("成員姓名")],rows:7,primary:"name",rowScore:()=>1});}
+
+/* ===================== 各分支設定 ===================== */
+function grasshopperBranch(){
+  const memberTiers=[[6,6],[13,8],[19,10],[25,13]];
+  return {
+    id:"grasshopper",name:"小童軍團",unit:"小童軍",
+    typeOpts:["小童軍"],
+    positions:["旅長","副旅長","小童軍團長","小童軍副團長","教練員","旅負責領袖 (如沒有旅長)"],
+    minMembers:6,
+    minStd2:"2. 其中一名領袖的性別必須與該團成員相同，如團內有男及女成員，則必須有男及女領袖，惟區總監可因應特殊情況批准個別小童軍團豁免必須有男領袖的規定。",
+    blocks:[
+      blockMembers({max:22,memberTiers,tierLabels:[6,13,19,25],bands:["6–12人：6分","13–18人：8分","19–24人：10分","25人或以上：13分"]}),
+      blockProgressRatio({title:"2. 考獲進步章記錄",max:20,note:"按考獲進步章人次佔全團人數比例計分。",items:[{n:"第一步（紅色）"},{n:"第二步（啡色）"},{n:"第三步（藍色）"},{n:"第四步（綠色）"}],tiers:[[0.2,3],[0.3,5],[0.4,8],[0.5,11],[0.6,14],[0.7,17],[0.8,20]],bands:["≥20%：3","≥30%：5","≥40%：8","≥50%：11","≥60%：14","≥70%：17","≥80%：20"]}),
+      blockAdmin(ADMIN([{n:"（1）集會記錄",p:1},{n:"（2）行事曆",p:1},{n:"（3）出席記錄",p:1},{n:"（4）個人記錄",p:1},{n:"（5）個人進度記錄",p:1},{n:"（6）領袖會議記錄",p:1},{n:"（7）物資記錄",p:1},{n:"（8）收支記錄",p:2},{n:"（9）定時更新YMIS",p:2},{n:"（10）銷售童軍獎券",p:1}]),12),
+      blockMeeting(),
+      flatActivity("act1","2. 團自行舉辦之非例行團集會活動／訓練／服務",20,5,5,"每舉辦一項得 5分，最高 20分。"),
+      flatActivity("act2","3.1 成員參與區、地域及總會所舉辦的訓練／活動／社區服務／比賽",10,4,5,"每舉辦一項得 5分，最高 10分。"),
+      flatActivity("act3","3.2 領袖參與區、地域及總會所舉辦的訓練／活動／社區服務／比賽",10,4,5,"每舉辦一項得 5分，最高 10分。"),
+    ]
+  };
+}
+
+function cubBranch(){
+  const memberTiers=[[12,6],[19,8],[27,10],[36,13]];
+  return {
+    id:"cub",name:"幼童軍團",unit:"幼童軍",
+    typeOpts:["幼童軍"],
+    positions:["旅長","副旅長","幼童軍團長","幼童軍副團長","教練員","旅負責領袖 (如沒有旅長)"],
+    minMembers:12,
+    minStd2:"2. 其中一名領袖的性別必須與該團成員相同，如團內有男及女成員，則必須有男及女領袖。",
+    blocks:[
+      blockMembers({max:22,memberTiers,tierLabels:[12,19,27,36],bands:["12–18人：6分","19–26人：8分","27–35人：10分","36人或以上：13分"]}),
+      blockProgressRatio({title:"2. 考獲進度性獎章記錄",max:14,note:"每年最少有四分一團員考獲較高一級的進度性獎章（包括支部最高獎章）。按佔全團人數比例計分。",items:[{n:"幼童軍獎章"},{n:"幼童軍歷奇章"},{n:"幼童軍高級歷奇章"},{n:"金紫荊獎章"}],tiers:[[0.15,5],[0.25,6],[0.35,7],[0.45,8],[0.55,10],[0.65,12],[0.75,14]],bands:["≥15%：5","≥25%：6","≥35%：7","≥45%：8","≥55%：10","≥65%：12","≥75%：14"]}),
+      blockTopAwardCub({title:"3. 考獲支部最高獎章記錄（金紫荊獎章）",note:"每一位成員考獲支部最高獎章得1分，不設上限（數值取自上面金紫荊獎章人次）。"}),
+      blockAdmin(ADMIN([{n:"（1）集會記錄",p:1},{n:"（2）行事曆",p:1},{n:"（3）出席記錄",p:1},{n:"（4）個人記錄",p:1},{n:"（5）個人進度記錄",p:1},{n:"（6）領袖會議記錄",p:1},{n:"（7）物資記錄",p:1},{n:"（8）收支記錄",p:2},{n:"（9）定時更新YMIS",p:2},{n:"（10）銷售童軍獎券",p:1}]),12),
+      blockMeeting(),
+      flatActivity("act1","2. 團自行舉辦之非例行團集會活動／訓練／服務",10,5,2,"每舉辦一項得 2分，最高 10分。"),
+      catActivity("act2","3.1 成員參與區、地域及總會所舉辦的訓練／活動",11,11,["活動","訓練"],{"活動":2,"訓練":1},"每項活動 2分，訓練 1分，最高 11分。"),
+      catActivity("act3","3.2 領袖參與區、地域及總會所舉辦的訓練／活動／工作坊",11,11,["活動","訓練 / 工作坊"],{"活動":2,"訓練 / 工作坊":1},"每項活動 2分，訓練／工作坊 1分，最高 11分。"),
+      serviceBlock(),
+      compSingle(["香港總監挑戰盾"],"活動名稱"),
+      compMulti(),
+    ]
+  };
+}
+
+function scoutBranch(){
+  const memberTiers=[[12,6],[19,8],[25,10],[33,13]];
+  return {
+    id:"scout",name:"童軍團",unit:"童軍",
+    typeOpts:["童軍","海童軍","空童軍"],
+    positions:["旅長","副旅長","童軍團長","童軍副團長","空童軍團長","空童軍副團長","海童軍團長","海童軍副團長","教練員","旅負責領袖 (如沒有旅長)"],
+    minMembers:12,
+    minStd2:"2. 其中一名領袖的性別必須與該團成員相同，如團內有男及女成員，則必須有男及女領袖。",
+    blocks:[
+      blockMembers({max:22,memberTiers,tierLabels:[12,19,25,33],bands:["12–18人：6分","19–24人：8分","25–32人：10分","33人或以上：13分"]}),
+      blockProgressSum({title:"2. 考獲進度性獎章記錄",note:"每位成員考獲進度性獎章得1分，總領袖獎章得3分，不設上限。",items:[{n:"童軍探索獎章",pts:1},{n:"童軍標準獎章",pts:1},{n:"童軍高級獎章",pts:1},{n:"總領袖獎章",pts:3}]}),
+      blockAdmin(ADMIN([{n:"（1）集會記錄",p:1},{n:"（2）行事曆",p:1},{n:"（3）出席記錄",p:1},{n:"（4）個人記錄",p:1},{n:"（5）個人進度記錄",p:1},{n:"（6）小隊長會議記錄",p:1},{n:"（7）領袖會議記錄",p:1},{n:"（8）物資記錄",p:1},{n:"（9）收支記錄",p:2},{n:"（10）定時更新YMIS",p:2},{n:"（11）銷售童軍獎券",p:1}]),13),
+      blockMeeting(),
+      flatActivity("act1","2. 團自行舉辦之非例行團集會活動／訓練／服務",10,5,2,"每舉辦一項得 2分，最高 10分。"),
+      catActivity("act2","3.1 成員參與區、地域及總會所舉辦的訓練／活動",11,11,["活動","訓練"],{"活動":2,"訓練":1},"每項活動 2分，訓練 1分，最高 11分。"),
+      catActivity("act3","3.2 領袖參與區、地域及總會所舉辦的訓練／活動／工作坊",11,11,["活動","訓練 / 工作坊"],{"活動":2,"訓練 / 工作坊":1},"每項活動 2分，訓練／工作坊 1分，最高 11分。"),
+      serviceBlock(),
+      compMulti(),
+    ]
+  };
+}
+
+function ventureBranch(){
+  const memberTiers=[[6,4],[7,6],[10,8],[13,10],[16,13]];
+  return {
+    id:"venture",name:"深資童軍團",unit:"深資童軍",
+    typeOpts:["深資童軍","深資海童軍","深資空童軍"],
+    positions:["旅長","副旅長","深資童軍團長","深資童軍副團長","深資空童軍團長","深資空童軍副團長","深資海童軍團長","深資海童軍副團長","教練員","旅負責領袖 (如沒有旅長)"],
+    minMembers:6,
+    minStd2:"2. 其中一名領袖的性別必須與該團成員相同，如團內有男及女成員，則必須有男及女領袖。",
+    blocks:[
+      blockMembers({max:22,memberTiers,tierLabels:[6,7,10,13,16],bands:["6人：4分","7–9人：6分","10–12人：8分","13–15人：10分","16人或以上：13分"]}),
+      blockProgressRatio({title:"2. 考獲進度性獎章記錄",max:14,note:"按考獲段章／金帶人次佔全團人數比例計分。",items:[{n:"深資童軍獎章段章"},{n:"榮譽童軍獎章金帶"}],tiers:[[0.3,5],[0.5,6],[0.7,7],[0.9,8],[1.1,10],[1.3,12],[1.5,14]],bands:["≥30%：5","≥50%：6","≥70%：7","≥90%：8","≥110%：10","≥130%：12","≥150%：14"]}),
+      blockTopAward({title:"3. 考獲支部最高獎章記錄",note:"每位成員考獲深資童軍獎章得1分，榮譽童軍獎章得3分，不設上限（兩種獎章皆計入總分，以文字描述為準）。",items:[{n:"深資童軍獎章",pts:1},{n:"榮譽童軍獎章",pts:3}]}),
+      blockAdmin(ADMIN([{n:"（1）集會記錄",p:1},{n:"（2）行事曆",p:1},{n:"（3）出席記錄",p:1},{n:"（4）個人記錄",p:1},{n:"（5）個人進度記錄",p:1},{n:"（6）深資童軍執行委員會會議記錄",p:1},{n:"（7）領袖會議記錄",p:1},{n:"（8）物資記錄",p:1},{n:"（9）收支記錄",p:2},{n:"（10）定時更新YMIS",p:2},{n:"（11）銷售童軍獎券",p:1}]),13),
+      blockMeeting(),
+      mkTable({key:"act1",title:"2. 團自行舉辦之非例行團集會活動／訓練／服務",max:16,section:"丙",note:"全年最少舉行一次會員大會（6分）；其他每項 2分，最高共 16分。",columns:[COL.date,catCol(["會員大會","其他"]),COL.name,COL.ppl],rows:6,primary:"date",rowScore:r=>(r.cat==="會員大會"?6:2)}),
+      catActivity("act2","3.1 成員參與區、地域及總會所舉辦的訓練／活動",11,11,["活動","訓練"],{"活動":2,"訓練":1},"每項活動 2分，訓練 1分，最高 11分。"),
+      catActivity("act3","3.2 領袖參與區、地域及總會所舉辦的訓練／活動",11,11,["活動","訓練"],{"活動":2,"訓練":1},"每項活動 2分，訓練 1分，最高 11分。"),
+      serviceBlock(),
+      compSingle(["全港深資童軍錦標賽","海童軍錦標賽"],"活動名稱"),
+      compMulti(),
+    ]
+  };
+}
+
+function roverBranch(){
+  const memberTiers=[[6,4],[7,6],[10,8],[13,10],[16,13]];
+  return {
+    id:"rover",name:"樂行童軍團",unit:"樂行童軍",
+    typeOpts:["樂行童軍","樂行海童軍","樂行空童軍"],
+    positions:["旅長","副旅長","樂行童軍團長","樂行童軍副團長","樂行空童軍團長","樂行空童軍副團長","樂行海童軍團長","樂行海童軍副團長","教練員","旅負責領袖 (如沒有旅長)"],
+    minMembers:6,
+    minStd2:"2. 其中一名領袖的性別必須與該團成員相同，如團內有男及女成員，則必須有男及女領袖。",
+    blocks:[
+      blockMembers({max:22,memberTiers,tierLabels:[6,7,10,13,16],bands:["6人：4分","7–9人：6分","10–12人：8分","13–15人：10分","16人或以上：13分"]}),
+      blockProgressRatio({title:"2. 考獲進度性獎章記錄",max:14,note:"按考獲單元項目人次佔全團人數比例計分。",items:[{n:"樂行童軍獎章單元項目"},{n:"貝登堡獎章單元項目"}],tiers:[[0.5,5],[0.75,6],[1,7],[1.25,8],[1.5,10],[1.75,12],[2,14]],bands:["≥50%：5","≥75%：6","≥100%：7","≥125%：8","≥150%：10","≥175%：12","≥200%：14"]}),
+      blockTopAward({title:"3. 考獲支部最高獎章記錄",note:"每位成員考獲樂行童軍獎章得1分，貝登堡獎章得3分，不設上限（兩種獎章皆計入總分，以文字描述為準）。",items:[{n:"樂行童軍獎章",pts:1},{n:"貝登堡獎章",pts:3}]}),
+      blockAdmin(ADMIN([{n:"（1）集會記錄",p:1},{n:"（2）行事曆",p:1},{n:"（3）出席記錄",p:1},{n:"（4）個人記錄",p:1},{n:"（5）個人進度記錄",p:1},{n:"（6）樂行童軍管理委員會會議記錄",p:1},{n:"（7）領袖會議記錄",p:1},{n:"（8）物資記錄",p:1},{n:"（9）收支記錄",p:2},{n:"（10）定時更新YMIS",p:2},{n:"（11）銷售童軍獎券",p:1}]),13),
+      blockMeeting(),
+      mkTable({key:"act1",title:"2. 團自行舉辦之非例行團集會活動／訓練／服務",max:16,section:"丙",note:"全年最少舉行一次會員大會（6分）；其他每項 2分，最高共 16分。",columns:[COL.date,catCol(["會員大會","其他"]),COL.name,COL.ppl],rows:6,primary:"date",rowScore:r=>(r.cat==="會員大會"?6:2)}),
+      catActivity("act2","3.1 成員參與區、地域及總會所舉辦的訓練／活動",11,11,["活動","訓練"],{"活動":2,"訓練":1},"每項活動 2分，訓練 1分，最高 11分。"),
+      catActivity("act3","3.2 領袖參與區、地域及總會所舉辦的訓練／活動",11,11,["活動","訓練"],{"活動":2,"訓練":1},"每項活動 2分，訓練 1分，最高 11分。"),
+      serviceBlock(),
+      compSingle(["全港樂行童軍錦標賽"],"活動名稱"),
+      compMulti(),
+      roverMoot(),
+    ]
+  };
+}
+
+const BRANCHES=[grasshopperBranch(),cubBranch(),scoutBranch(),ventureBranch(),roverBranch()];
+let currentBranch=BRANCHES[0];
+let SCORES={};
+let MIN_FAIL=false;
+let currentView="form";
+let dashDistrict="",dashKeyword="";
+let saveTimer=null;
+
+/* ===================== 渲染 ===================== */
+function renderTabs(){
+  $("#tabs").innerHTML=BRANCHES.map(b=>`<div class="tab ${b.id===currentBranch.id?'active':''}" onclick="switchBranch('${b.id}')">${b.name}</div>`).join("");
+}
+function switchBranch(id){
+  save(); // save current before switching
+  currentBranch=BRANCHES.find(b=>b.id===id);
+  renderTabs();renderForm();load();recompute();
+}
+function headerHTML(b){
+  return `<div class="card">
+    <div style="font-weight:800;color:var(--green);font-size:16px;margin-bottom:8px">${b.name} 評分表（${YEAR} 年優異旅團獎勵計劃）</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">香港童軍總會 ~ 港島地域　·　評選期：${EVAL_YEAR} 年 1 月 1 日 至 ${EVAL_YEAR} 年 12 月 31 日</div>
+    <div class="grid2">
+      ${textField("h_groupNo","旅號／旅團名稱","例：第1旅",true)}
+      ${selField("h_type","團類別",b.typeOpts)}
+      ${textField("h_meetingPlace","集會地點","",true)}
+      ${textField("h_meetingTime","集會時間","")}
+      ${textField("h_leader","負責領袖姓名","",true)}
+      ${textField("h_phone","聯絡電話","",true)}
+      ${selField("h_district","區別",DISTRICTS.map(d=>d.name),true)}
+      ${selField("h_position","童軍職位",b.positions)}
+      ${textField("h_email","電郵地址（必須填寫）","",true)}
+    </div>
+    <div class="dist-email" id="distEmailBox"></div>
+  </div>`;
+}
+function minStdHTML(b){
+  const items=[
+    `1. 最少有 ${b.minMembers} 名團員`,
+    b.minStd2,
+    `3. 呈交 ${EVAL_YEAR}／${YEAR} 年度財政報告`,
+    `4. 於「青少年成員資訊系統」（YMIS）系統註冊`,
+  ];
+  return `<div class="card">
+    <div class="sec-title">⭐ 最低標準（全部須達「有」方可獲評選）</div>
+    <div class="min-std">${items.map((t,i)=>ynField("ms_"+i,t,0).replace(' <em>(0分)</em>','')).join("")}</div>
+    <div class="blk-detail" id="det_ms"></div>
+  </div>`;
+}
+function sigHTML(){
+  return `<div class="card">
+    <div class="sec-title">✍️ 簽署</div>
+    <div class="grid2">
+      ${textField("sig_ev_name","評審員 姓名","")}
+      ${textField("sig_ev_pos","評審員 職位","")}
+      ${textField("sig_ev_date","評審員 日期","")}
+      ${textField("sig_dc_date","區總監 日期","")}
+    </div>
+    <div class="grid2" style="margin-top:8px">
+      ${selField("h_extra","附加資料",["有","無"])}
+    </div>
+  </div>`;
+}
+function renderForm(){
+  const b=currentBranch;
+  let html=headerHTML(b)+minStdHTML(b);
+  const sections={"甲":"（甲）童軍旅團標準","乙":"（乙）行政與財務管理","丙":"（丙）訓練與活動"};
+  ["甲","乙","丙"].forEach(sec=>{
+    const blocks=b.blocks.filter(bl=>bl.section===sec);
+    if(!blocks.length)return;
+    html+=`<div class="sec-title">${sections[sec]}</div>`;
+    blocks.forEach(bl=>{html+=bl.render();});
+  });
+  html+=sigHTML();
+  $("#form").innerHTML=html;
+  // attach listeners
+  $("#form").querySelectorAll("input,select").forEach(el=>{
+    el.addEventListener("input",()=>{recompute();scheduleSave();});
+    el.addEventListener("change",()=>{recompute();scheduleSave();});
+  });
+}
+function recompute(){
+  let total=0;
+  currentBranch.blocks.forEach(bl=>{const s=bl.score();SCORES[bl.key]=s;setText("sc_"+bl.key,s);total+=s;});
+  // min standards
+  let fail=false;let anyAns=false;
+  for(let i=0;i<4;i++){const v=str("ms_"+i);if(v==="無")fail=true;if(v==="有"||v==="無")anyAns=true;}
+  MIN_FAIL=fail;
+  setHTML("det_ms",fail?`<span class="fail">⚠ 未達最低標準 — 未符資格獲評選（有項目為「無」）</span>`:(anyAns?`<span class="pass">✓ 已確認全部最低標準為「有」</span>`:"請逐一確認各項最低標準"));
+  setText("totalVal",total);
+  const pf=fail?"<span class='fail'>未達最低標準</span>":"<span class='pass'>符合最低標準</span>";
+  setHTML("pfVal",pf);
+  updateDistEmailBox();
+}
+function updateDistEmailBox(){
+  const d=DISTRICTS.find(x=>x.name===str("h_district"));
+  const box=$("#distEmailBox");if(!box)return;
+  const emails=getEmails();
+  if(!d){box.innerHTML="";return;}
+  const em=emails[d.id];
+  box.innerHTML=`提交電郵（${d.name}）：<b>${em||"（尚未設定 — 請按右上角 ⚙ 設定）"}</b>`;
+}
+
+/* ===================== 儲存 / 載入 ===================== */
+function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(save,500);}
+function save(){try{const data={};$("#form").querySelectorAll("[name]").forEach(el=>data[el.name]=el.value);localStorage.setItem("dga_"+currentBranch.id,JSON.stringify(data));}catch(e){}}
+function load(){try{const raw=localStorage.getItem("dga_"+currentBranch.id);if(!raw)return;const data=JSON.parse(raw);Object.entries(data).forEach(([k,v])=>{const el=document.querySelector(`[name="${k}"]`);if(el)el.value=v;});}catch(e){}}
+
+/* ===================== 各區電郵設定 ===================== */
+function getEmails(){
+  // 全域預設（DISTRICTS.email）＋ 本機覆蓋（localStorage），本機優先
+  const out={};DISTRICTS.forEach(d=>{out[d.id]=d.email||"";});
+  try{const ov=JSON.parse(localStorage.getItem("dga_emails")||"{}");Object.assign(out,ov);}catch(e){}
+  return out;
+}
+function openSettings(){
+  const emails=getEmails();
+  $("#setRows").innerHTML=DISTRICTS.map(d=>`<div class="set-row"><label>${d.name}</label><input type="email" id="em_${d.id}" value="${esc(emails[d.id]||"")}" placeholder="${d.name}@..."></div>`).join("");
+  $("#setModal").classList.add("open");
+}
+function closeSettings(){$("#setModal").classList.remove("open");}
+function saveSettings(){const emails={};DISTRICTS.forEach(d=>{const v=$("#em_"+d.id).value.trim();if(v)emails[d.id]=v;});localStorage.setItem("dga_emails",JSON.stringify(emails));closeSettings();updateDistEmailBox();recompute();}
+
+/* ===================== 提交電郵 ===================== */
+function buildEmailBody(){
+  const b=currentBranch;
+  const L=[];
+  L.push(`【${YEAR} 優異旅團獎勵計劃 — ${b.name} 評分表】`);
+  L.push(`評選期：${EVAL_YEAR}-01-01 至 ${EVAL_YEAR}-12-31`);
+  L.push("");
+  L.push("—— 旅團資料 ——");
+  L.push(`旅號／旅團：${str("h_groupNo")||"（未填）"}`);
+  L.push(`團類別：${str("h_type")||"-"}`);
+  L.push(`區別：${str("h_district")||"（未填）"}`);
+  L.push(`集會地點：${str("h_meetingPlace")||"-"}`);
+  L.push(`集會時間：${str("h_meetingTime")||"-"}`);
+  L.push(`負責領袖：${str("h_leader")||"-"}`);
+  L.push(`聯絡電話：${str("h_phone")||"-"}`);
+  L.push(`電郵：${str("h_email")||"-"}`);
+  L.push(`職位：${str("h_position")||"-"}`);
+  L.push("");
+  L.push("—— 最低標準 ——");
+  let fail=false;
+  ["最少團員","性別領袖","財政報告","YMIS註冊"].forEach((t,i)=>{const v=str("ms_"+i)||"未填";L.push(`${t}：${v}`);if(v==="無")fail=true;});
+  L.push("");
+  L.push("—— 各項得分 ——");
+  currentBranch.blocks.forEach(bl=>{const m=bl.max();L.push(`${bl.title()}：${SCORES[bl.key]??0} 分${typeof m==="number"?(" / "+m):"（不設上限）"}`);});
+  const total=currentBranch.blocks.reduce((a,bl)=>a+(SCORES[bl.key]||0),0);
+  L.push("");
+  L.push(`★ 總分：${total} 分`);
+  L.push(fail?"★ 結果：未達最低標準（不獲評選）":"★ 結果：符合最低標準");
+  L.push("");
+  L.push("（完整資料見隨附 Excel 檔案，已一併下載，請夾附於此電郵。）");
+  L.push(`提交時間：${new Date().toLocaleString("zh-HK")}`);
+  return L.join("\n");
+}
+function submitEmail(){
+  recompute();save();
+  const dName=str("h_district");
+  const d=DISTRICTS.find(x=>x.name===dName);
+  if(!d){alert("請先喺「旅團資料」揀選你所屬嘅區別。");return;}
+  const emails=getEmails();
+  const to=emails[d.id];
+  if(!to){alert(`尚未設定「${d.name}」嘅提交電郵。\n請先撳右上角 ⚙ 設定各區電郵。`);openSettings();return;}
+  // 必填檢查
+  const reqs=[["h_groupNo","旅號"],["h_district","區別"],["h_leader","負責領袖姓名"],["h_phone","聯絡電話"],["h_email","電郵地址"]];
+  for(const[f,l]of reqs){if(!str(f)){if(!confirm(`「${l}」尚未填寫。仍要繼續提交嗎？`))return;break;}}
+  const subject=`${YEAR} 優異旅團 — ${currentBranch.name} — 旅號 ${str("h_groupNo")||"(未填)"} — ${dName}`;
+  const body=buildEmailBody();
+  // 先下載 Excel
+  exportSheet(true);
+  const mailto=`mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.location.href=mailto;
+}
+
+/* ===================== 匯出 Excel / CSV ===================== */
+function buildAOA(){
+  const b=currentBranch;
+  const A=[];
+  A.push([`${YEAR} 年優異旅團獎勵計劃 — ${b.name} 評分表`]);
+  A.push(["香港童軍總會 ~ 港島地域"]);
+  A.push([`評選期：${EVAL_YEAR}-01-01 至 ${EVAL_YEAR}-12-31`]);
+  A.push([]);
+  A.push(["旅團資料"]);
+  A.push(["旅號／旅團",str("h_groupNo")],["團類別",str("h_type")],["區別",str("h_district")],["集會地點",str("h_meetingPlace")],["集會時間",str("h_meetingTime")],["負責領袖",str("h_leader")],["聯絡電話",str("h_phone")],["電郵",str("h_email")],["童軍職位",str("h_position")]);
+  A.push([]);
+  A.push(["最低標準"]);
+  ["最少團員","性別領袖","財政報告","YMIS註冊"].forEach((t,i)=>A.push([t,str("ms_"+i)||"未填"]));
+  A.push([]);
+  let total=0;
+  currentBranch.blocks.forEach(bl=>{
+    A.push([bl.title(),"得分： "+(SCORES[bl.key]||0)+(typeof bl.max()==="number"?" / "+bl.max():"")]);
+    const d=bl.data();
+    if(Array.isArray(d)&&d.length){
+      // table blocks: d is array of rows (arrays); others: array of [label,value]
+      if(d[0]&&Array.isArray(d[0]))d.forEach(r=>A.push(r));
+      else d.forEach(r=>A.push(r));
+    }
+    total+=SCORES[bl.key]||0;
+    A.push([]);
+  });
+  A.push(["總分",total]);
+  return A;
+}
+function exportSheet(silent){
+  recompute();
+  const aoa=buildAOA();
+  const b=currentBranch;
+  const fname=`${YEAR}_DGA_${b.id}_${str("h_groupNo")||"form"}`.replace(/[\\/:*?"<>|]/g,"_");
+  if(typeof XLSX!=="undefined"){
+    try{
+      const ws=XLSX.utils.aoa_to_sheet(aoa);
+      ws["!cols"]=[{wch:30},{wch:18},{wch:18},{wch:14},{wch:12}];
+      const wb=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb,ws,b.unit);
+      XLSX.writeFile(wb,fname+".xlsx");
+      if(!silent)alert("已匯出 Excel（.xlsx）。");
+      return;
+    }catch(e){console.warn("XLSX export failed, fallback CSV",e);}
+  }
+  // CSV fallback
+  const csv=aoa.map(r=>r.map(c=>`"${String(c==null?"":c).replace(/"/g,'""')}"`).join(",")).join("\r\n");
+  const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fname+".csv";a.click();
+  if(!silent)alert("已匯出 CSV（Excel 程式庫未能載入，改用 CSV）。");
+}
+
+/* ===================== 區概覽 Dashboard ===================== */
+function switchView(v){
+  currentView=v;
+  $("#vt_form").classList.toggle("active",v==="form");
+  $("#vt_dash").classList.toggle("active",v==="dashboard");
+  $("#formView").style.display=v==="form"?"":"none";
+  $("#dashboardView").style.display=v==="dashboard"?"":"none";
+  $("#formBar").style.display=v==="form"?"":"none";
+  $("#tabs").style.display=v==="form"?"":"none";
+  if(v==="dashboard")renderDashboard();
+}
+function getRegistry(){try{return JSON.parse(localStorage.getItem("dga_registry")||"[]");}catch(e){return[];}}
+function setRegistry(a){localStorage.setItem("dga_registry",JSON.stringify(a));}
+function recId(){return "r"+Date.now()+Math.floor(Math.random()*1000);}
+function totalFromScores(){let t=0;for(const k in SCORES)t+=SCORES[k]||0;return t;}
+function collectFields(){
+  const f={};
+  document.querySelectorAll("#form [name]").forEach(el=>{
+    if(el.type==="radio"){if(el.checked)f[el.name]=el.value;}else f[el.name]=el.value;
+  });
+  return f;
+}
+function saveToRegistry(){
+  recompute();
+  const b=currentBranch;
+  const fields=collectFields();
+  const groupNo=(fields.h_groupNo||"").trim();
+  if(!groupNo){alert("請先填寫「旅號／旅團名稱」再儲存至區概覽。");return;}
+  const reg=getRegistry();
+  let rec=reg.find(r=>r.branchId===b.id&&r.groupNo===groupNo&&r.year===YEAR);
+  const now=new Date().toISOString();
+  const data={id:rec?rec.id:recId(),year:YEAR,branchId:b.id,branchName:b.name,
+    groupNo,district:fields.h_district||"",type:fields.h_type||"",leader:fields.h_leader||"",
+    phone:fields.h_phone||"",email:fields.h_email||"",position:fields.h_position||"",
+    meetingPlace:fields.h_meetingPlace||"",meetingTime:fields.h_meetingTime||"",
+    fields,scores:Object.assign({},SCORES),total:totalFromScores(),passFail:MIN_FAIL?"fail":"pass",
+    dataAOA:buildAOA(),status:rec?rec.status:"草擬",lastYear:rec?!!rec.lastYear:false,
+    approvedAt:rec?rec.approvedAt:"",updatedAt:now,createdAt:rec?rec.createdAt:now};
+  if(rec)Object.assign(rec,data);else reg.push(data);
+  setRegistry(reg);
+  alert("✓ 已儲存至區概覽：「"+groupNo+"」（"+b.name+"）\n總分："+data.total+" 分　最低標準："+(MIN_FAIL?"未達":"符合"));
+}
+function deleteRecord(id,ev){if(ev)ev.stopPropagation();
+  const reg=getRegistry();const rec=reg.find(r=>r.id===id);if(!rec)return;
+  if(!confirm("刪除「"+rec.groupNo+"」（"+rec.branchName+"）嘅紀錄？"))return;
+  setRegistry(reg.filter(r=>r.id!==id));renderDashboard();}
+function toggleLastYear(id,ev){if(ev)ev.stopPropagation();
+  const reg=getRegistry();const rec=reg.find(r=>r.id===id);if(!rec)return;
+  rec.lastYear=!rec.lastYear;setRegistry(reg);renderDashboard();}
+function setStatus(id,status,ev){if(ev)ev.stopPropagation();
+  const reg=getRegistry();const rec=reg.find(r=>r.id===id);if(!rec)return;
+  rec.status=status;rec.updatedAt=new Date().toISOString();setRegistry(reg);renderDashboard();}
+function loadRecordToForm(id,ev){if(ev)ev.stopPropagation();
+  const reg=getRegistry();const rec=reg.find(r=>r.id===id);if(!rec)return;
+  switchView("form");switchBranch(rec.branchId);
+  Object.entries(rec.fields).forEach(([k,v])=>{
+    const els=document.querySelectorAll('[name="'+k+'"]');if(!els.length)return;
+    if(els.length>1||els[0].type==="radio"){els.forEach(el=>el.checked=(el.value===v));}else els[0].value=v;
+  });
+  recompute();window.scrollTo(0,0);}
+function getRegionEmail(){return localStorage.getItem("dga_region_email")||REGION_EMAIL;}
+function saveRegionEmail(){const v=prompt("請輸入地域電郵（批核後轉交嘅目的地）：",getRegionEmail());if(v!==null){localStorage.setItem("dga_region_email",v.trim());renderDashboard();}}
+function buildAOABasic(rec){
+  const A=[[YEAR+" 優異旅團 — "+rec.branchName],[rec.groupNo+" / "+(rec.district||"-")],["總分",rec.total],["最低標準",rec.passFail==="fail"?"未達":"符合"],[""],["各項得分"]];
+  const b=BRANCHES.find(x=>x.id===rec.branchId);
+  if(b)b.blocks.forEach(bl=>A.push([bl.title(),rec.scores[bl.key]||0]));
+  return A;
+}
+function exportAOA(aoa,baseName){
+  const fname=(baseName||"dga").replace(/[\\/:*?"<>|]/g,"_");
+  if(typeof XLSX!=="undefined"){try{const ws=XLSX.utils.aoa_to_sheet(aoa);ws["!cols"]=[{wch:30},{wch:18},{wch:18},{wch:14},{wch:12}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"report");XLSX.writeFile(wb,fname+".xlsx");return;}catch(e){}}
+  const csv=aoa.map(r=>r.map(c=>'"'+String(c==null?"":c).replace(/"/g,'""')+'"').join(",")).join("\r\n");
+  const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fname+".csv";a.click();
+}
+function regionEmailBody(rec){
+  const L=[];
+  L.push("【已批核 — 轉交地域】"+YEAR+" 優異旅團獎勵計劃");
+  L.push("");
+  L.push("旅團："+rec.groupNo+"（"+rec.branchName+"）");
+  L.push("區別："+(rec.district||"-")+"　團類別："+(rec.type||"-"));
+  L.push("負責領袖："+(rec.leader||"-")+"　電話："+(rec.phone||"-"));
+  L.push("電郵："+(rec.email||"-"));
+  L.push("");
+  L.push("★ 本年總分："+rec.total+" 分");
+  L.push("最低標準："+(rec.passFail==="fail"?"未達":"符合"));
+  L.push("");
+  L.push("—— 各項得分 ——");
+  const b=BRANCHES.find(x=>x.id===rec.branchId);
+  if(b)b.blocks.forEach(bl=>{L.push(bl.title()+"："+(rec.scores[bl.key]||0)+" 分");});
+  L.push("");
+  L.push("批核時間："+new Date().toLocaleString("zh-HK"));
+  L.push("（完整資料見隨附 Excel，已一併下載，請夾附於此電郵。）");
+  return L.join("\n");
+}
+function approveAndForward(id,ev){if(ev)ev.stopPropagation();
+  const reg=getRegistry();const rec=reg.find(r=>r.id===id);if(!rec)return;
+  const re=getRegionEmail();
+  if(!re){alert("尚未設定「地域電郵」。請先喺區概覽頂部撳「設定地域電郵」。");return;}
+  if(rec.passFail==="fail"){if(!confirm("注意：「"+rec.groupNo+"」未達最低標準。仍要批核並轉交地域？"))return;}
+  else if(!confirm("確認批核「"+rec.groupNo+"」（"+rec.branchName+"，總分 "+rec.total+"）並轉交地域？\n地域電郵："+re))return;
+  rec.status="已批核";rec.approvedAt=new Date().toISOString();setRegistry(reg);
+  exportAOA(rec.dataAOA||buildAOABasic(rec),YEAR+"_DGA_"+rec.branchId+"_"+rec.groupNo);
+  const body=regionEmailBody(rec);
+  const subject="【已批核】"+YEAR+" 優異旅團 — "+rec.branchName+" — "+rec.groupNo+" — "+(rec.district||"");
+  window.location.href="mailto:"+encodeURIComponent(re)+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
+  renderDashboard();
+}
+function renderDashboard(){
+  const reg=getRegistry().filter(r=>r.year===YEAR);
+  const re=getRegionEmail();
+  const submitted=reg.filter(r=>r.status==="已遞交"||r.status==="已批核").length;
+  const approved=reg.filter(r=>r.status==="已批核").length;
+  const draft=reg.filter(r=>r.status==="草擬").length;
+  const lastOnly=reg.filter(r=>r.lastYear&&r.status==="草擬").length;
+  let rows=reg.slice().sort((a,b)=>(a.district||"").localeCompare(b.district||"")||(a.groupNo||"").localeCompare(b.groupNo||""));
+  if(dashDistrict)rows=rows.filter(r=>r.district===dashDistrict);
+  if(dashKeyword){const k=dashKeyword.toLowerCase();rows=rows.filter(r=>(r.groupNo+" "+r.branchName+" "+(r.leader||"")).toLowerCase().includes(k));}
+  let h="";
+  h+='<div class="region-box">📍 地域電郵（批核轉交目的地）：<b>'+(re||"（未設定）")+'</b> <button class="mini pri" onclick="saveRegionEmail()">設定地域電郵</button></div>';
+  h+='<div class="stat-row">'+
+    '<div class="stat"><div class="n">'+reg.length+'</div><div class="l">本年旅團紀錄</div></div>'+
+    '<div class="stat ok"><div class="n">'+submitted+'</div><div class="l">已遞交／已批核</div></div>'+
+    '<div class="stat ok"><div class="n">'+approved+'</div><div class="l">已批核轉交</div></div>'+
+    '<div class="stat warn"><div class="n">'+lastOnly+'</div><div class="l">⚠ 上年有交今年未交</div></div>'+
+    '<div class="stat"><div class="n">'+draft+'</div><div class="l">草擬中</div></div></div>';
+  h+='<div class="dash-bar">'+
+    '<label class="fld"><span>篩選區別</span><select onchange="dashDistrict=this.value;renderDashboard()"><option value="">全部區別</option>'+DISTRICTS.map(d=>'<option'+(dashDistrict===d.name?' selected':'')+'>'+d.name+'</option>').join("")+'</select></label>'+
+    '<label class="fld"><span>搜尋（旅號／分支／領袖，按 Enter）</span><input type="text" value="'+esc(dashKeyword)+'" placeholder="輸入關鍵字…" onchange="dashKeyword=this.value;renderDashboard()"></label>'+
+    '<button class="btn btn-sec" onclick="exportRegistry()">⬆ 匯出全部(JSON)</button>'+
+    '<button class="btn btn-sec" onclick="importRegistryClick()">⬇ 匯入(JSON)</button>'+
+    '<input type="file" id="importFile" accept="application/json,.json" style="display:none" onchange="importRegistry(this)">'+
+    '<button class="btn btn-pri" onclick="switchView(\'form\')">＋ 新增／填寫旅團</button></div>';
+  if(!rows.length){
+    h+='<div class="empty">未有符合嘅旅團紀錄。<br>請撳「＋ 新增／填寫旅團」填妥評分表後，撳底部「儲存至區概覽」。</div>';
+  }else{
+    h+='<div class="dwrap"><table class="dtable"><thead><tr>'+
+      '<th>旅號／旅團</th><th>分支</th><th>區別</th><th>本年總分</th><th>最低標準</th>'+
+      '<th>本年狀態</th><th>上年</th><th>提示</th><th>操作</th></tr></thead><tbody>';
+    rows.forEach(r=>{
+      const pf=r.passFail==="fail";
+      const stPill=r.status==="已批核"?"pill-app":(r.status==="已遞交"?"pill-sub":"pill-draft");
+      let hint,hcls="";
+      if(r.status==="已批核")hint="✓ 已批核轉交地域";
+      else if(r.status==="已遞交")hint="✓ 已遞交（待批核）";
+      else if(r.lastYear){hint="⚠ 上年有交，今年未交";hcls="warn";}
+      else hint="未遞交";
+      h+='<tr style="cursor:pointer" onclick="loadRecordToForm(\''+r.id+'\')">'+
+        '<td><b>'+esc(r.groupNo)+'</b><br><span style="font-size:11px;color:#777">'+esc(r.leader||"")+'</span></td>'+
+        '<td>'+esc(r.branchName)+'</td><td>'+esc(r.district||"-")+'</td>'+
+        '<td><b style="color:var(--green)">'+r.total+'</b></td>'+
+        '<td><span class="pill '+(pf?"pill-fail":"pill-pass")+'">'+(pf?"未達":"符合")+'</span></td>'+
+        '<td><span class="pill '+stPill+'">'+(r.status||"草擬")+'</span></td>'+
+        '<td>'+(r.lastYear?'<span class="pill pill-pass">有</span>':'<span class="pill pill-draft">無</span>')+'</td>'+
+        '<td><span class="hint '+hcls+'">'+hint+'</span></td>'+
+        '<td class="row-act" onclick="event.stopPropagation()">'+
+          '<button class="mini pri" onclick="approveAndForward(\''+r.id+'\',event)">批核轉交</button>'+
+          '<button class="mini" onclick="setStatus(\''+r.id+'\',\'已遞交\',event)">標記已遞交</button>'+
+          '<button class="mini" onclick="toggleLastYear(\''+r.id+'\',event)">切換上年</button>'+
+          '<button class="mini" onclick="loadRecordToForm(\''+r.id+'\',event)">檢視</button>'+
+          '<button class="mini del" onclick="deleteRecord(\''+r.id+'\',event)">刪除</button>'+
+        '</td></tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+  h+='<div style="font-size:11px;color:#777;margin-top:10px">點擊任何一列可載入至評分表檢視／編輯。「切換上年」手動標記該旅團上年曾否遞交。資料儲存於本機瀏覽器；可用「匯出／匯入 JSON」喺不同裝置間整合（例如各旅團領袖匯出自己嘅紀錄，由區幹事匯入整合）。</div>';
+  $("#dashboardView").innerHTML=h;
+}
+function exportRegistry(){
+  const reg=getRegistry();
+  const blob=new Blob([JSON.stringify({app:"dga-2026",year:YEAR,exportedAt:new Date().toISOString(),registry:reg},null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=YEAR+"_DGA_registry.json";a.click();
+}
+function importRegistryClick(){$("#importFile").click();}
+function importRegistry(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      const incoming=Array.isArray(data)?data:(data.registry||[]);
+      const reg=getRegistry();let added=0,updated=0;
+      incoming.forEach(nr=>{
+        const idx=reg.findIndex(r=>r.id===nr.id||(r.branchId===nr.branchId&&r.groupNo===nr.groupNo&&r.year===nr.year));
+        if(idx>=0){reg[idx]=Object.assign({},reg[idx],nr);updated++;}else{reg.push(nr);added++;}
+      });
+      setRegistry(reg);renderDashboard();
+      alert("匯入完成：新增 "+added+" 項，更新 "+updated+" 項。");
+    }catch(err){alert("匯入失敗：檔案格式不正確。");}
+    input.value="";
+  };
+  reader.readAsText(file);
+}
+
+/* ===================== 初始化 ===================== */
+renderTabs();renderForm();load();recompute();
+</script>
+</body>
+</html>

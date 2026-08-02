@@ -1,0 +1,5 @@
+{
+  "backend": "",
+  "_說明_zh-Hant": "部署 GAS 後端後，把 backend 填上 GAS 網頁應用程式 URL（https://script.google.com/macros/s/.../exec）。留空則 Vercel 端顯示 MOCK 示範數據。亦可用網址 ?backend=URL 或瀏覽器本機（localStorage dga_backend）覆蓋。",
+  "_note_en": "After deploying the GAS backend, set 'backend' to the GAS Web App URL. Leave empty to run the Vercel site in MOCK demo mode."
+}
