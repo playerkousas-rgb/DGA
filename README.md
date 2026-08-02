@@ -27,7 +27,7 @@
 ## 檔案
 ```
 index.html / apps-script/app.html   前端（5 分頁＋三模式＋支部彩色）
-apps-script/Code.gs                  後端（隱藏超管＋帳號管理＋各支部合格線＋統計）
+apps-script/Code.gs                  後端＋前端（前端以 base64 包入，**單檔部署，唔使另建 app.html**）
 data/config.json                     填 GAS URL（留空＝MOCK）
 data/groups.json                     201 旅團
 docs/                                教學
