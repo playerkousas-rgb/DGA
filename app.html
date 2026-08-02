@@ -64,7 +64,7 @@ footer.bar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#fff;bor
 @media print{#app{display:block!important}table{font-size:11px}th{background:#333!important;color:#fff!important;-webkit-print-color-adjust:exact}td,th{border:1px solid #999!important;padding:3px 5px}header.top,footer.bar,.bar-btns,.btn,.steps{display:none!important}body{background:#fff}}
 @media(max-width:600px){.top-in h1{font-size:14px}.total-box .val{font-size:20px}.btn{padding:9px 11px;font-size:12px}}
 </style></head><body>
-<header class="top"><div class="top-in"><h1>🏕️ 2026 優異旅團評分系統</h1><span class="sub" id="topSub">港島地域</span></div></header>
+<header class="top"><div class="top-in"><h1>🏕️ 2026 優異旅團評分系統</h1><span class="sub" id="topSub">港島地域</span><span id="verBadge" style="background:#fff;color:#1b5e20;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800;margin-left:6px">v37</span></div></header>
 <main><div id="app"></div></main>
 <footer class="bar" id="formBar" style="display:none"><div class="bar-in"><div class="total-box"><span class="lbl">總分</span><span class="val" id="totalVal">0</span><span class="pf" id="pfVal">—</span></div><div class="bar-btns" id="barBtns"></div></div></footer>
 <div id="toast" class="toast" style="display:none"></div>
@@ -383,7 +383,7 @@ function ensureLoginBtn(){const t=document.querySelector(".top-in");if(t&&!docum
 function goHome(){resetTheme();setBar("",false);ensureLoginBtn();hideBackBtn();
   var tabs=BRANCH_ORDER.map(function(b){var c=BRANCH_COLORS[b.id]||{};return '<button class="btn" style="background:'+c.c+';color:#fff;font-size:18px;padding:30px;min-width:140px" onclick="pickBranch(\''+b.id+'\')">'+(c.dot||"")+"<br>"+b.name+'<br><span style="font-size:11px;opacity:.9">評分表</span></button>';}).join("");
   var previewCard=previewBtnsHidden()?"":'<div class="card" style="text-align:center;background:var(--themeL);border:1px solid #cfe3d0"><button class="btn btn-sec" style="margin:3px" onclick="previewRegion()">👁️ 預覽地域總覽</button> <button class="btn btn-sec" style="margin:3px" onclick="previewDistrict()">👁️ 預覽區總覽</button></div>';
-  show('<div class="card" style="text-align:center"><h2 style="margin:0 0 4px;color:var(--theme)">2026 優異旅團獎勵計劃</h2><p style="color:var(--muted);margin:0 0 14px">港島地域 · 評選期 '+INIT.evalYear+'-01-01 至 '+INIT.evalYear+'-12-31</p><div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px">'+tabs+'</div></div>'+previewCard+'<p style="text-align:center;color:var(--muted);font-size:11px;margin:14px 0 0">Scout System</p>');}
+  show('<div class="card" style="text-align:center"><h2 style="margin:0 0 4px;color:var(--theme)">2026 優異旅團獎勵計劃</h2><p style="color:var(--muted);margin:0 0 14px">港島地域 · 評選期 '+INIT.evalYear+'-01-01 至 '+INIT.evalYear+'-12-31</p><div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px">'+tabs+'</div></div>'+previewCard+'<p style="text-align:center;color:var(--muted);font-size:11px;margin:14px 0 0">Scout System · '+APP_VER+'</p>');}
 
 /* ---- 旅團填寫（揀支部→區→旅團→表格）---- */
 function ensureBackBtn(){var t=document.querySelector(".top-in");if(!t)return;var b=document.getElementById("hdrBack");if(!b){var s=document.createElement("span");s.innerHTML='<button id="hdrBack" class="btn btn-sec" style="padding:6px 12px;font-size:12px" onclick="exitToHome()">← 返回</button>';t.insertBefore(s,t.lastChild);}else{b.style.display="";}}
@@ -568,7 +568,7 @@ function printDistrictStats(){
   html+='</tbody></table><p style="text-align:center;color:#999;font-size:11px;margin-top:20px">Scout System</p></div>';
   show(html);setBar('<button class="btn btn-sec" onclick="goDash()">← 返回</button><button class="btn btn-pri" onclick="window.print()">🖨️ 列印</button>',false);ensureBackBtn();
 }
-var previewMode=false,FIELDS_SRC=null;
+var previewMode=false,FIELDS_SRC=null;var APP_VER="v37";
 var MOCK={submissions:[],sessions:{},accounts:null,passMarks:null};
 function mockSave(){try{localStorage.setItem("dga_mock",JSON.stringify(MOCK));}catch(e){}}
 function mockLoad(){try{const s=JSON.parse(localStorage.getItem("dga_mock")||"null");if(s)MOCK=s;}catch(e){}if(!MOCK.submissions)MOCK.submissions=[];if(!MOCK.sessions)MOCK.sessions={};}
@@ -621,6 +621,7 @@ function boot(){
       show('<div class="card" style="text-align:center;padding:24px">'+
         '<div style="font-size:38px">⚠️</div>'+
         '<h3 style="color:#c0392b;margin:6px 0">偵測不到 google.script.run</h3>'+
+        "<p style='font-size:11px;color:#aaa;margin:2px 0'>版本 "+APP_VER+"（見到 v37 = 新版已生效）</p>"+
         '<p>正式讀寫 Google Sheet 必須由 <b>GAS 部署網址</b>開啟（網址含 <code>/macros/s/&#8230;/exec</code>）。</p>'+
         '<p style="font-size:12px;color:#888;word-break:break-all">目前網址：'+esc(location.href)+'</p>'+
         '<p style="font-size:13px">若已用部署網址開啟仍見此訊息，多數係 GAS 仲用緊舊版快取 —— 請喺 GAS 編輯器<b>重新部署（建立新版本）</b>再用新網址。</p>'+
