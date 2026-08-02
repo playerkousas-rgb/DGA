@@ -73,6 +73,13 @@ footer.bar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#fff;bor
 "use strict";
 /* ===== GAS RPC 包裝 ===== */
 function gas(fn){return function(){const args=[].slice.call(arguments);return new Promise((res,rej)=>{if(inGas()){google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn].apply(google.script.run,args);}else if(BACKEND_URL&&!mockMode){fetch(BACKEND_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:fn,args:args}),redirect:"follow"}).then(function(r){return r.json();}).then(res).catch(rej);}else{setTimeout(()=>{try{res((MOCK_API[fn]||function(){return{ok:false,error:"未知功能"};}).apply(null,args));}catch(e){rej(e);}},0);}});};}
+function inGas(){
+  if(typeof google!=="undefined"&&google.script&&google.script.run) return true;
+  try{var u=(window.location&&window.location.href)||"";
+    if(u.indexOf("script.google.com")>=0||u.indexOf("googleusercontent.com")>=0||u.indexOf("/macros/s/")>=0) return true;
+  }catch(e){}
+  return false;
+}
 const INIT={year:2026,evalYear:2025,districts:[],emails:{},regionEmail:""};
 var session=null;        // {token,role,district}
 var ctx={};              // {district,groupNo,branchId,sponsor,sections}
@@ -379,7 +386,7 @@ function goHome(){resetTheme();setBar("",false);ensureLoginBtn();hideBackBtn();
   show('<div class="card" style="text-align:center"><h2 style="margin:0 0 4px;color:var(--theme)">2026 優異旅團獎勵計劃</h2><p style="color:var(--muted);margin:0 0 14px">港島地域 · 評選期 '+INIT.evalYear+'-01-01 至 '+INIT.evalYear+'-12-31</p><div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px">'+tabs+'</div></div>'+previewCard+'<p style="text-align:center;color:var(--muted);font-size:11px;margin:14px 0 0">Scout System</p>');}
 
 /* ---- 旅團填寫（揀支部→區→旅團→表格）---- */
-function ensureBackBtn(){var t=document.querySelector(".top-in");if(!t)return;var b=document.getElementById("hdrBack");if(!b){var s=document.createElement("span");s.innerHTML='<button id="hdrBack" class="btn btn-sec" style="padding:6px 12px;font-size:12px" onclick="exitToHome()">\u2190 \u8fd4\u56de</button>';t.insertBefore(s,t.lastChild);}else{b.style.display="";}}
+function ensureBackBtn(){var t=document.querySelector(".top-in");if(!t)return;var b=document.getElementById("hdrBack");if(!b){var s=document.createElement("span");s.innerHTML='<button id="hdrBack" class="btn btn-sec" style="padding:6px 12px;font-size:12px" onclick="exitToHome()">← 返回</button>';t.insertBefore(s,t.lastChild);}else{b.style.display="";}}
 function hideBackBtn(){var b=document.getElementById("hdrBack");if(b)b.style.display="none";}
 function exitToHome(){session=null;if(inGas())mockMode=false;goHome();}
 function enterMockThen(fn){if(!mockMode){mockMode=true;mockLoad();if(!MOCK.submissions||!MOCK.submissions.length)seedMock();}fn();}
