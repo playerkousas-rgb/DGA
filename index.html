@@ -370,7 +370,7 @@ function buildSummary(){const L=[];currentBranch.blocks.forEach(bl=>{L.push(bl.t
 /* ============ 畫面：首頁 ============ */
 /* ============ 畫面：首頁 ============ */
 /* ============ v5：首頁（5 支部分頁）＋登入＋總覽＋帳號管理＋打印 ============ */
-var PASS_MARKS={},OVERVIEW=[],ACCOUNTS=[],ME={},regionTab="",districtTab="";
+var PASS_MARKS={},OVERVIEW=[],ACCOUNTS=[],ME={},regionTab="",districtTab="",currentDashR=null;
 function ensureLoginBtn(){const t=document.querySelector(".top-in");if(t&&!document.getElementById("hdrLogin")){const s=document.createElement("span");s.style.marginLeft="auto";s.innerHTML='<button id="hdrLogin" class="btn btn-sec" style="padding:6px 12px;font-size:12px" onclick="openLogin()">🔐 登入</button>';t.appendChild(s);}}
 
 function goHome(){resetTheme();setBar("",false);ensureLoginBtn();
@@ -410,13 +410,14 @@ function doLogin(){const u=$("#l_user").value.trim(),pw=$("#l_pw").value;if(!u||
 function goDash(){if(!session){openLogin();return;}if(session.role==="region"||session.role==="superadmin")refreshRegion();else refreshDistrict();}
 
 /* ---- 區（審核員／區總監）---- */
-function refreshDistrict(){setBar('<span class="spin"></span> 載入…',false);gas("listForDistrict")(session.token).then(r=>{if(!r.ok){toast(r.error);session=null;openLogin();return;}submissionsCache=r.submissions||[];PASS_MARKS=r.passMarks;renderDistrictDash(r);}).catch(e=>toast("失敗："+e.message));}
-function renderDistrictDash(r){
+function refreshDistrict(){setBar('<span class="spin"></span> 載入…',false);gas("listForDistrict")(session.token).then(r=>{if(!r.ok){toast(r.error);session=null;openLogin();return;}submissionsCache=r.submissions||[];PASS_MARKS=r.passMarks;renderDistrictDash(currentDashR);}).catch(e=>toast("失敗："+e.message));}
+function renderDistrictDash(currentDashR){
+  currentDashR=r;
   const list=submissionsCache,isDC=session.role==="dc",pm=PASS_MARKS;
   const distNames=INIT.districts||[];
   setBar('<button class="btn btn-sec" onclick="exitToHome()">🏠 返回</button><button class="btn btn-sec" onclick="refreshDistrict()">↻</button>'+(isDC?'<button class="btn btn-sec" onclick="renderAccounts()">👥 帳號</button>':"")+'<button class="btn btn-sec" onclick="printDistrictStats()">🖥️ 印</button>',false);
-  const btabs=['<span class="step'+(districtTab===""?" on":"")+'" onclick="districtTab=\'\';renderDistrictDash(r)">全部</span>'];
-  BRANCH_ORDER.forEach(function(b){const c=BRANCH_COLORS[b.id]||{};btabs.push('<span class="step'+(districtTab===b.id?" on":"")+'" style="'+(districtTab===b.id?"background:"+c.c+";color:#fff":"")+'" onclick="districtTab=\''+b.id+'\';renderDistrictDash(r)">'+(c.dot||"")+" "+b.name+'</span>');});
+  const btabs=['<span class="step'+(districtTab===""?" on":"")+'" onclick="districtTab=\'\';renderDistrictDash(currentDashR)">全部</span>'];
+  BRANCH_ORDER.forEach(function(b){const c=BRANCH_COLORS[b.id]||{};btabs.push('<span class="step'+(districtTab===b.id?" on":"")+'" style="'+(districtTab===b.id?"background:"+c.c+";color:#fff":"")+'" onclick="districtTab=\''+b.id+'\';renderDistrictDash(currentDashR)">'+(c.dot||"")+" "+b.name+'</span>');});
   const filtered=districtTab?list.filter(function(x){return x.branchId===districtTab;}):list;
   const bb={};BRANCH_ORDER.forEach(function(b){bb[b.id]=0;});list.forEach(function(x){if(x.branchId in bb)bb[x.branchId]++;});
   let hh='<div class="card"><h3 style="margin:0;color:var(--theme)">'+esc(r.district)+" — "+(isDC?"區總監":"審核員")+"（"+esc(r.username)+"）</h3></div>";
@@ -465,6 +466,7 @@ function downloadOriginalExcel(){
     }).catch(function(e){toast('ExcelJS讀取失敗：'+e.message);groupDownload();});
   }).catch(function(e){toast('取模板失敗：'+e.message);groupDownload();});
 }
+function goBackToDash(){if(session.role==="region"||session.role==="superadmin"){if(regionTab!==undefined)renderRegionDash();else refreshRegion();}else{if(currentDashR)renderDistrictDash(currentDashR);else refreshDistrict();}}
 function viewSub(id){const r=submissionsCache.find(x=>x.id===id);if(!r){toast("找不到");return;}editId=id;ctx={district:r.district,groupNo:r.groupNo,sponsor:"",branchId:r.branchId};renderForm(r.branchId,r.fields,false);const canRev=(r.status==="已遞交"&&(session.role==="reviewer"||session.role==="dc"||session.role==="region"||session.role==="superadmin"));const canConf=(r.status==="已審核"&&(session.role==="dc"||session.role==="region"||session.role==="superadmin"));let bar='<button class="btn btn-sec" onclick="goDash()">← 返回</button><button class="btn btn-sec" onclick="downloadOriginalExcel()">⬇️ Excel原版</button><button class="btn btn-pri" onclick="window.print()">🖨️ APP版列印</button>';if(canRev)bar+='<button class="btn btn-pri" id="reviewBtn" onclick="doReviewFromView()" disabled>✅ 審核員批核</button>';if(canConf)bar+='<button class="btn btn-pri" onclick="doConfirmFromView()">📤 確認送地域</button>';setBar(bar,true);if(canRev){["sig_ev_name","sig_ev_pos"].forEach(function(n){const el=document.querySelector('[name="'+n+'"]');if(el)el.addEventListener("input",updateReviewBtn);});updateReviewBtn();}}
 function updateReviewBtn(){const b=document.getElementById("reviewBtn");if(!b)return;const n=get("sig_ev_name").trim(),p=get("sig_ev_pos").trim();b.disabled=!(n&&p);b.style.opacity=b.disabled?"0.5":"1";b.textContent=b.disabled?"✅ 審核員批核（待填簽署）":"✅ 審核員批核";}
 function todayStr(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
@@ -575,6 +577,6 @@ const MOCK_API={
 
 /* ===== 啟動 ===== */
 async function bootMode(){if(inGas())return "gas";try{const q=new URLSearchParams(location.search).get("backend");if(q){BACKEND_URL=q;try{localStorage.setItem("dga_backend",q);}catch(e){}return "fetch";}const ls=localStorage.getItem("dga_backend");if(ls){BACKEND_URL=ls;return "fetch";}}catch(e){}try{const c=await fetch("data/config.json",{cache:"no-store"}).then(r=>r.json());if(c&&c.backend){BACKEND_URL=c.backend;return "fetch";}}catch(e){}return "mock";}
-window.addEventListener("load",()=>{bootMode().then(mode=>{if(mode==="mock"){mockMode=true;mockLoad();if(!MOCK.submissions||!MOCK.submissions.length)seedMock();}gas("getInit")().then(init=>{Object.assign(INIT,init);$("#topSub").textContent="港島地域"+(mode==="mock"?" · 示範模式":(mode==="fetch"?" · 雲端":""))+" · "+init.year;goHome();}).catch(e=>{show('<div class="card">無法連接伺服器：'+esc(e.message)+'</div>');});});});
+window.addEventListener("load",()=>{bootMode().then(mode=>{if(mode==="mock"){mockMode=true;mockLoad();if(!MOCK.submissions||!MOCK.submissions.length)seedMock();}gas("getInit")().then(init=>{Object.assign(INIT,init);$("#topSub").textContent="Scout System";goHome();}).catch(e=>{show('<div class="card">無法連接伺服器：'+esc(e.message)+'</div>');});});});
 </script>
 </body></html>
