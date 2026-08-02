@@ -504,7 +504,13 @@ function printDistrictStats(){const pm=PASS_MARKS;const w=window.open("","_blank
 function printRegionStats(){const w=window.open("","_blank");w.document.write('<meta charset="utf-8"><title>全區統計</title><style>body{font-family:"PingFang TC",sans-serif;padding:20px}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border:1px solid #999;padding:5px}th{background:#1b5e20;color:#fff}h2{color:#1b5e20}</style>'+_statsHTML("全區統計",submissionsCache,PASS_MARKS,OVERVIEW));w.document.close();w.print();}
 
 /* ============ MOCK 示範模式 ============ */
-function inGas(){return (typeof google!=="undefined"&&google.script&&google.script.run);}
+function inGas(){
+  if(typeof google!=="undefined"&&google.script&&google.script.run) return true;
+  try{const u=window.location.href||"";
+    if(u.indexOf("script.google.com")>=0||u.indexOf("googleusercontent.com")>=0||u.indexOf("/macros/s/")>=0) return true;
+  }catch(e){}
+  return false;
+}
 var BACKEND_URL="",mockMode=false,FIELDS_SRC=null;
 var MOCK={submissions:[],sessions:{},accounts:null,passMarks:null};
 function mockSave(){try{localStorage.setItem("dga_mock",JSON.stringify(MOCK));}catch(e){}}
