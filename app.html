@@ -64,7 +64,7 @@ footer.bar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#fff;bor
 @media print{#app{display:block!important}table{font-size:11px}th{background:#333!important;color:#fff!important;-webkit-print-color-adjust:exact}td,th{border:1px solid #999!important;padding:3px 5px}header.top,footer.bar,.bar-btns,.btn,.steps{display:none!important}body{background:#fff}}
 @media(max-width:600px){.top-in h1{font-size:14px}.total-box .val{font-size:20px}.btn{padding:9px 11px;font-size:12px}}
 </style></head><body>
-<header class="top"><div class="top-in"><h1>🏕️ 2026 優異旅團評分系統</h1><span class="sub" id="topSub">港島地域</span><span id="verBadge" style="background:#fff;color:#1b5e20;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800;margin-left:6px">v38</span></div></header>
+<header class="top"><div class="top-in"><h1>🏕️ 2026 優異旅團評分系統</h1><span class="sub" id="topSub">港島地域</span><span id="verBadge" style="background:#fff;color:#1b5e20;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800;margin-left:6px">v39</span></div></header>
 <main><div id="app"></div></main>
 <footer class="bar" id="formBar" style="display:none"><div class="bar-in"><div class="total-box"><span class="lbl">總分</span><span class="val" id="totalVal">0</span><span class="pf" id="pfVal">—</span></div><div class="bar-btns" id="barBtns"></div></div></footer>
 <div id="toast" class="toast" style="display:none"></div>
@@ -576,7 +576,7 @@ function printDistrictStats(){
   html+='</tbody></table><p style="text-align:center;color:#999;font-size:11px;margin-top:20px">Scout System</p></div>';
   show(html);setBar('<button class="btn btn-sec" onclick="goDash()">← 返回</button><button class="btn btn-pri" onclick="window.print()">🖨️ 列印</button>',false);ensureBackBtn();
 }
-var previewMode=false,FIELDS_SRC=null;var APP_VER="v38";var BACKEND_URL="https://script.google.com/macros/s/AKfycbyOXyISIolfDFMcX7s1LnqsHdVA99J-4Fti1lv7KcpCrx6DaJi-LKZHxRtKiba39Jsd/exec";
+var previewMode=false,FIELDS_SRC=null;var APP_VER="v39";var BACKEND_URL="https://script.google.com/macros/s/AKfycbyOXyISIolfDFMcX7s1LnqsHdVA99J-4Fti1lv7KcpCrx6DaJi-LKZHxRtKiba39Jsd/exec";
 var MOCK={submissions:[],sessions:{},accounts:null,passMarks:null};
 function mockSave(){try{localStorage.setItem("dga_mock",JSON.stringify(MOCK));}catch(e){}}
 function mockLoad(){try{const s=JSON.parse(localStorage.getItem("dga_mock")||"null");if(s)MOCK=s;}catch(e){}if(!MOCK.submissions)MOCK.submissions=[];if(!MOCK.sessions)MOCK.sessions={};}
