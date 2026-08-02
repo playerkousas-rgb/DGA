@@ -72,7 +72,7 @@ footer.bar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#fff;bor
 <script>
 "use strict";
 /* ===== GAS RPC 包裝 ===== */
-function gas(fn){return function(){const args=[].slice.call(arguments);return new Promise((res,rej)=>{if(inGas()){google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn].apply(google.script.run,args);}else if(BACKEND_URL&&!mockMode){fetch(BACKEND_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:fn,args:args}),redirect:"follow"}).then(function(r){return r.json();}).then(res).catch(rej);}else{setTimeout(()=>{try{res((MOCK_API[fn]||function(){return{ok:false,error:"未知功能"};}).apply(null,args));}catch(e){rej(e);}},0);}});};}
+function gas(fn){return function(){const args=[].slice.call(arguments);return new Promise((res,rej)=>{if(mockMode){setTimeout(function(){try{res((MOCK_API[fn]||function(){return{ok:false,error:"未知功能"};}).apply(null,args));}catch(e){rej(e);}},0);}else if(inGas()){google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn].apply(google.script.run,args);}else if(BACKEND_URL){fetch(BACKEND_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:fn,args:args}),redirect:"follow"}).then(function(r){return r.json();}).then(res).catch(rej);}else{rej(new Error("無法連接後端"));}});};}
 function inGas(){
   if(typeof google!=="undefined"&&google.script&&google.script.run) return true;
   try{var u=(window.location&&window.location.href)||"";
