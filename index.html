@@ -72,7 +72,7 @@ footer.bar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#fff;bor
 <script>
 "use strict";
 /* ===== GAS RPC 包裝 ===== */
-function gas(fn){return function(){const args=[].slice.call(arguments);return new Promise((res,rej)=>{if(mockMode){setTimeout(function(){try{res((MOCK_API[fn]||function(){return{ok:false,error:"未知功能"};}).apply(null,args));}catch(e){rej(e);}},0);}else if(inGas()){google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn].apply(google.script.run,args);}else if(BACKEND_URL){fetch(BACKEND_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:fn,args:args}),redirect:"follow"}).then(function(r){return r.json();}).then(res).catch(rej);}else{rej(new Error("無法連接後端"));}});};}
+function gas(fn){return function(){const args=[].slice.call(arguments);return new Promise(function(res,rej){if(mockMode){setTimeout(function(){try{res((MOCK_API[fn]||function(){return{ok:false,error:"未知功能"};}).apply(null,args));}catch(e){rej(e);}},0);}else{try{google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn].apply(google.script.run,args);}catch(e){rej(e);}}});};}
 function inGas(){
   if(typeof google!=="undefined"&&google.script&&google.script.run) return true;
   try{var u=(window.location&&window.location.href)||"";
@@ -389,7 +389,7 @@ function goHome(){resetTheme();setBar("",false);ensureLoginBtn();hideBackBtn();
 function ensureBackBtn(){var t=document.querySelector(".top-in");if(!t)return;var b=document.getElementById("hdrBack");if(!b){var s=document.createElement("span");s.innerHTML='<button id="hdrBack" class="btn btn-sec" style="padding:6px 12px;font-size:12px" onclick="exitToHome()">← 返回</button>';t.insertBefore(s,t.lastChild);}else{b.style.display="";}}
 function hideBackBtn(){var b=document.getElementById("hdrBack");if(b)b.style.display="none";}
 function exitToHome(){session=null;mockMode=false;goHome();}
-function enterMockThen(fn){if(!mockMode){mockMode=true;mockLoad();if(!MOCK.submissions||!MOCK.submissions.length)seedMock();}fn();}
+function enterMockThen(fn){if(!mockMode){mockMode=true;mockLoad();if(!MOCK.submissions||!MOCK.submissions.length)seedMock();}else if(!MOCK.submissions||!MOCK.submissions.length){seedMock();}fn();}
 function previewRegion(){enterMockThen(function(){MOCK.sessions["MP_R"]={username:"HKIR",role:"region",district:""};session={token:"MP_R",role:"region",district:"",username:"HKIR（示範）"};goDash();});}
 function previewDistrict(){enterMockThen(function(){MOCK.sessions["MP_D"]={username:"WCHDC",role:"dc",district:"灣仔區"};session={token:"MP_D",role:"dc",district:"灣仔區",username:"WCHDC（示範）"};goDash();});}
 function pickBranch(bid){ctx={branchId:bid};renderForm(bid,null,true);setBar('<button class="btn btn-sec" onclick="groupDownload()">⬇️ Excel</button><button class="btn btn-pri" onclick="groupSubmit()">✅ 確認送出</button>',true);ensureBackBtn();}
@@ -601,7 +601,19 @@ const MOCK_API={
 };
 
 /* ===== 啟動 ===== */
-async function bootMode(){if(inGas())return "gas";try{const q=new URLSearchParams(location.search).get("backend");if(q){BACKEND_URL=q;try{localStorage.setItem("dga_backend",q);}catch(e){}return "fetch";}const ls=localStorage.getItem("dga_backend");if(ls){BACKEND_URL=ls;return "fetch";}}catch(e){}try{const c=await fetch("data/config.json",{cache:"no-store"}).then(r=>r.json());if(c&&c.backend){BACKEND_URL=c.backend;return "fetch";}}catch(e){}return "mock";}
-window.addEventListener("load",()=>{bootMode().then(mode=>{if(mode==="mock"){mockMode=true;mockLoad();if(!MOCK.submissions||!MOCK.submissions.length)seedMock();}gas("getInit")().then(init=>{Object.assign(INIT,init);$("#topSub").textContent="Scout System";goHome();}).catch(e=>{show('<div class="card">無法連接伺服器：'+esc(e.message)+'</div>');});});});
+async function bootMode(){
+  var u=(window.location&&window.location.href)||"";
+  var isGAS=u.indexOf("googleusercontent.com")>=0||u.indexOf("script.google.com")>=0||u.indexOf("/macros/s/")>=0;
+  if(isGAS){
+    for(var i=0;i<60;i++){
+      if(typeof google!=="undefined"&&google.script&&google.script.run) break;
+      await new Promise(function(r){setTimeout(r,100);});
+    }
+    return "gas";
+  }
+  try{var q=new URLSearchParams(location.search).get("backend");if(q){BACKEND_URL=q;try{localStorage.setItem("dga_backend",q);}catch(e){}return "fetch";}var ls=localStorage.getItem("dga_backend");if(ls){BACKEND_URL=ls;return "fetch";}}catch(e){}
+  try{var c=await fetch("data/config.json",{cache:"no-store"}).then(function(r){return r.json();});if(c&&c.backend){BACKEND_URL=c.backend;return "fetch";}}catch(e){}
+  return "mock"}
+window.addEventListener("load",()=>{bootMode().then(mode=>{if(mode==="mock"){mockMode=true;mockLoad();}gas("getInit")().then(init=>{Object.assign(INIT,init);$("#topSub").textContent="Scout System";goHome();}).catch(e=>{show('<div class="card">無法連接伺服器：'+esc(e.message)+'</div>');});});});
 </script>
 </body></html>
