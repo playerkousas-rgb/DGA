@@ -434,7 +434,6 @@ function renderDistrictDash(r){currentDashR=r;ensureBackBtn();
 }
 function doReview(id){viewSub(id);}
 function doConfirm(id){viewSub(id);}
-function doDelete(id){if(!confirm("刪除此紀錄？"))return;gas("deleteSubmission")(session.token,id).then(r=>{toast(r.ok?"已刪除":r.error);if(r.ok)goDash();}).catch(e=>toast(e.message));}
 
 /* ---- 檢視／列印旅團表單 ---- */
 function downloadOriginalExcel(){
@@ -506,7 +505,7 @@ function renderRegionDash(){ensureBackBtn();
   const sorted=filtered.slice().sort(function(a,b){return (a.district||"").localeCompare(b.district||"");});
   hh+='<div class="card"><h4 style="margin:0 0 8px">'+(regionTab?regionTab+" ":"")+'遒交紀錄 ('+filtered.length+')</h4><div class="dwrap"><table class="dtable"><thead><tr><th>區</th><th>旅團</th><th>支部</th><th>總分</th><th>合格</th><th>狀態</th><th>區批</th><th>區總監批核</th><th>操作</th></tr></thead><tbody>';
   sorted.forEach(function(x){const line=pm[x.branchId]||0;const pass=Number(x.total)>=line;const sp=x.status==="已確認"?"pill-app":(x.status==="已審核"?"pill-sub":"pill-draft");
-    hh+='<tr style="cursor:pointer" onclick="viewSub(\''+x.id+'\')"><td>'+esc(x.district)+'</td><td><b>'+esc(x.groupNo)+'</b></td><td>'+esc(x.branchName)+'</td><td><b>'+x.total+'</b></td><td><span class="pill '+(pass?"pill-pass":"pill-fail")+'">'+(pass?"合格":"未達線")+'</span></td><td><span class="pill '+sp+'">'+esc(x.status)+'</span></td><td style="font-size:11px;color:#555">'+(x.reviewedBy?esc(x.reviewedBy):"-")+'</td><td style="font-size:11px;color:#555">'+(x.confirmedBy?esc(x.confirmedBy):"-")+'</td><td class="row-act" onclick="event.stopPropagation()"><button class="mini" onclick="viewSub(\''+x.id+'\')">檢視</button><button class="mini del" onclick="doDelete(\''+x.id+'\')">刪除</button></td></tr>';});
+    hh+='<tr style="cursor:pointer" onclick="viewSub(\''+x.id+'\')"><td>'+esc(x.district)+'</td><td><b>'+esc(x.groupNo)+'</b></td><td>'+esc(x.branchName)+'</td><td><b>'+x.total+'</b></td><td><span class="pill '+(pass?"pill-pass":"pill-fail")+'">'+(pass?"合格":"未達線")+'</span></td><td><span class="pill '+sp+'">'+esc(x.status)+'</span></td><td style="font-size:11px;color:#555">'+(x.reviewedBy?esc(x.reviewedBy):"-")+'</td><td style="font-size:11px;color:#555">'+(x.confirmedBy?esc(x.confirmedBy):"-")+'</td><td class="row-act" onclick="event.stopPropagation()"><button class="mini" onclick="viewSub(\''+x.id+'\')">檢視</button></td></tr>';});
   hh+='</tbody></table></div></div>';
   show(hh);
 }
