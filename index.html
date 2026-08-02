@@ -370,12 +370,12 @@ function buildSummary(){const L=[];currentBranch.blocks.forEach(bl=>{L.push(bl.t
 /* ============ 畫面：首頁 ============ */
 /* ============ 畫面：首頁 ============ */
 /* ============ v5：首頁（5 支部分頁）＋登入＋總覽＋帳號管理＋打印 ============ */
-var PASS_MARKS={},OVERVIEW=[],ACCOUNTS=[],ME={};
+var PASS_MARKS={},OVERVIEW=[],ACCOUNTS=[],ME={},regionTab="",districtTab="";
 function ensureLoginBtn(){const t=document.querySelector(".top-in");if(t&&!document.getElementById("hdrLogin")){const s=document.createElement("span");s.style.marginLeft="auto";s.innerHTML='<button id="hdrLogin" class="btn btn-sec" style="padding:6px 12px;font-size:12px" onclick="openLogin()">🔐 登入</button>';t.appendChild(s);}}
 
 function goHome(){resetTheme();setBar("",false);ensureLoginBtn();
   const tabs=BRANCH_ORDER.map(b=>{const c=BRANCH_COLORS[b.id]||{};return '<button class="btn" style="background:'+c.c+';color:#fff;font-size:18px;padding:30px;min-width:140px" onclick="pickBranch(\''+b.id+'\')">'+(c.dot||"")+"<br>"+b.name+'<br><span style="font-size:11px;opacity:.9">評分表</span></button>';}).join("");
-  show('<div class="card" style="text-align:center"><h2 style="margin:0 0 4px;color:var(--theme)">2026 優異旅團獎勵計劃</h2><p style="color:var(--muted);margin:0 0 14px">港島地域 · 評選期 '+INIT.evalYear+'-01-01 至 '+INIT.evalYear+'-12-31</p><div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px">'+tabs+'</div></div><div class="card" style="text-align:center;background:var(--themeL);border:1px solid #cfe3d0"><p style="color:var(--muted);margin:0 0 8px;font-size:13px">向其他區／地域介紹系統？預覽示範</p><button class="btn btn-sec" style="margin:3px" onclick="previewRegion()">👁️ 預覽地域總覽</button> <button class="btn btn-sec" style="margin:3px" onclick="previewDistrict()">👁️ 預覽區總覽</button></div><p style="text-align:center;color:var(--muted);font-size:11px;margin:14px 0 0">Scout System</p>');}
+  show('<div class="card" style="text-align:center"><h2 style="margin:0 0 4px;color:var(--theme)">2026 優異旅團獎勵計劃</h2><p style="color:var(--muted);margin:0 0 14px">港島地域 · 評選期 '+INIT.evalYear+'-01-01 至 '+INIT.evalYear+'-12-31</p><div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px">'+tabs+'</div></div><div class="card" style="text-align:center;background:var(--themeL);border:1px solid #cfe3d0"><button class="btn btn-sec" style="margin:3px" onclick="previewRegion()">👁️ 預覽地域總覽</button> <button class="btn btn-sec" style="margin:3px" onclick="previewDistrict()">👁️ 預覽區總覽</button></div><p style="text-align:center;color:var(--muted);font-size:11px;margin:14px 0 0">Scout System</p>');}
 
 /* ----/* ---- 旅團填寫（揀支部→區→旅團→表格）---- */
 function exitToHome(){session=null;if(inGas())mockMode=false;goHome();}
