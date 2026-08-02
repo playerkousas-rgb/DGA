@@ -202,43 +202,40 @@ const GROUPS_DATA = [
   {d:"港島西區", no:"港島第1828旅", sponsor:"香港童軍總會港島西區區務委員會", sections:["童軍", "深資童軍"]},
 ];/* =====================================================================
 /* =====================================================================
-   2026 優異旅團獎勵計劃 — Google Apps Script 後端（v4）
-   - 旅團：免登入，填 form → 確認送出（後端記時間＋內容），無電郵
-   - 每區 2 帳號：審核員（睇已交、批核）/ 區總監（可跳過審核員直接批核、確認送交地域）
-   - 地域 1 帳號：睇各區獨立總覽＋統計＋設合格線＋匯出
-   - 合格分數線：Config 內一格由地域設定；旅團睇唔到，區睇到
-   - 預設 15 個帳號（7區×2 ＋ 地域）
-   部署後請先執行一次 setup()。
+   2026 優異旅團獎勵計劃 — GAS 後端 v5
+   - 隱藏超管（硬編碼，不寫入任何清單／記錄／MD），權限最高
+   - 預設帳號：地域 HKIR；各區 reviewer=區碼(CHW..HKS)、dc=區碼+DC；密碼 1234
+   - 全前端帳號管理（上級可改／刪下屬；自行改密）
+   - 各支部獨立合格線；旅團睇唔到，區／地域睇到
+   - 無電郵發送（電郵僅作記錄）
    ===================================================================== */
 const SHEET_ACC="Accounts", SHEET_GROUPS="Groups", SHEET_SUB="Submissions", SHEET_SESS="Sessions", SHEET_CFG="Config";
 const YEAR=2026, EVAL_YEAR=YEAR-1;
-const SESSION_HOURS=12;
-const DEFAULT_PASS_MARK=80;
-const DISTRICTS_LIST=["港島南區","柴灣區","筲箕灣區","港島北區","灣仔區","維多利亞城區","港島西區"];
-const ROLE_REVIEWER="reviewer", ROLE_DC="dc", ROLE_REGION="region";
-const ST_SUBMITTED="已遞交", ST_REVIEWED="已審核", ST_CONFIRMED="已確認";
+const SESSION_HOURS=24;
+const DEFAULT_PW="1234";
 const SUB_COLS=["id","createdAt","submittedAt","year","district","groupNo","branchId","branchName","type","leader","phone","position","meetingPlace","meetingTime","fieldsJson","scoresJson","total","minStd","status","reviewedAt","reviewedBy","confirmedAt","confirmedBy","summary"];
+const ROLES={SUPER:"superadmin",REGION:"region",DC:"dc",REVIEWER:"reviewer"};
+const ST_SUBMITTED="已遞交",ST_REVIEWED="已審核",ST_CONFIRMED="已確認";
+const DIST_CODES={CHW:"柴灣區",SKW:"筲箕灣區",HKN:"港島北區",WCH:"灣仔區",VIC:"維多利亞城區",HKW:"港島西區",HKS:"港島南區"};
+const BRANCH_KEYS=["grasshopper","cub","scout","venture","rover"];
+
+/* 隱藏超管（不顯示於任何地方） */
+const _S={u:"超管",p:"0728"};
 
 const _ss=()=>SpreadsheetApp.getActiveSpreadsheet();
-function _sh(name){const s=_ss().getSheetByName(name);if(!s)throw new Error("找不到工作表："+name+"。請先執行 setup()。");return s;}
+function _sh(n){const s=_ss().getSheetByName(n);if(!s)throw new Error("找不到工作表："+n+"。請先執行 setup()。");return s;}
 
 /* ===== 初始化 ===== */
 function setup(){
   const ss=_ss();
   const cfg=ss.getSheetByName(SHEET_CFG)||ss.insertSheet(SHEET_CFG);
   cfg.clear();cfg.getRange(1,1,1,2).setValues([["key","value"]]);
-  setCfg("year",YEAR);setCfg("passMark",DEFAULT_PASS_MARK);
+  setCfg("year",YEAR);BRANCH_KEYS.forEach(b=>setCfg("passMark_"+b,80));
   const acc=ss.getSheetByName(SHEET_ACC)||ss.insertSheet(SHEET_ACC);
-  acc.clear();acc.getRange(1,1,1,4).setValues([["username","password","role","district"]]);
-  const note=["=== 15 個帳號（請妥善保存）==="];
-  const rpw=randomPw2();
-  note.push("★ 地域（地域秘書處）："+REGION_USER()+"　密碼："+rpw);
-  acc.appendRow([REGION_USER(),rpw,ROLE_REGION,""]);
-  DISTRICTS_LIST.forEach(d=>{
-    const rp=randomPw2();acc.appendRow([d+"-審核員",rp,ROLE_REVIEWER,d]);note.push(d+" 審核員　密碼："+rp);
-    const dp=randomPw2();acc.appendRow([d+"-區總監",dp,ROLE_DC,d]);note.push(d+" 區總監　密碼："+dp);
-  });
-  note.push("合格分數線預設："+DEFAULT_PASS_MARK+"（地域登入後可改）");
+  acc.clear();acc.getRange(1,1,1,5).setValues([["username","password","role","district","email"]]);
+  acc.appendRow(["HKIR",DEFAULT_PW,ROLES.REGION,"",""]);
+  const note=["=== 預設帳號（密碼預設 1234）===","地域：HKIR"];
+  Object.keys(DIST_CODES).forEach(code=>{const d=DIST_CODES[code];acc.appendRow([code,DEFAULT_PW,ROLES.REVIEWER,d,""]);acc.appendRow([code+"DC",DEFAULT_PW,ROLES.DC,d,""]);note.push(d+"：區帳戶 "+code+"　區總監 "+code+"DC");});
   const gs=ss.getSheetByName(SHEET_GROUPS)||ss.insertSheet(SHEET_GROUPS);
   gs.clear();gs.getRange(1,1,1,4).setValues([["district","no","sponsor","sections"]]);
   GROUPS_DATA.forEach(g=>gs.appendRow([g.d,g.no,g.sponsor,g.sections.join(", ")]));
@@ -246,37 +243,41 @@ function setup(){
   sub.clear();sub.getRange(1,1,1,SUB_COLS.length).setValues([SUB_COLS.slice()]);
   const sess=ss.getSheetByName(SHEET_SESS)||ss.insertSheet(SHEET_SESS);
   sess.clear();sess.getRange(1,1,1,5).setValues([["token","username","role","district","expiresAt"]]);
-  const msg=note.join("\n");Logger.log(msg);return msg;
+  const msg=note.join("\n")+"\n\n（合格線預設各支部 80 分；地域登入後可改。）";
+  Logger.log(msg);return msg;
 }
-function REGION_USER(){return "地域秘書處";}
-function randomPw2(){const c="abcdefghijkmnpqrstuvwxyz23456789";let s="";for(let i=0;i<8;i++)s+=c.charAt(Math.floor(Math.random()*c.length));return s;}
 
-/* ===== Config ===== */
+/* ===== Config / 合格線 ===== */
 function getCfg(k){const v=_sh(SHEET_CFG).getDataRange().getValues();for(let i=1;i<v.length;i++)if(v[i][0]==k)return v[i][1];return"";}
-function setCfg(k,val){const cfg=_sh(SHEET_CFG);const v=cfg.getDataRange().getValues();for(let i=1;i<v.length;i++)if(v[i][0]==k){cfg.getRange(i+1,2).setValue(val);return;}cfg.appendRow([k,val]);}
-function getPassMark(){const p=Number(getCfg("passMark"));return isNaN(p)?DEFAULT_PASS_MARK:p;}
+function setCfg(k,val){const c=_sh(SHEET_CFG);const v=c.getDataRange().getValues();for(let i=1;i<v.length;i++)if(v[i][0]==k){c.getRange(i+1,2).setValue(val);return;}c.appendRow([k,val]);}
+function getPassMarks(){const o={};BRANCH_KEYS.forEach(b=>{const p=Number(getCfg("passMark_"+b));o[b]=isNaN(p)?80:p;});return o;}
+function getPassMark(branchId){const p=Number(getCfg("passMark_"+branchId));return isNaN(p)?80:p;}
 
 /* ===== Sub helpers ===== */
-function getCol(name){const i=SUB_COLS.indexOf(name);if(i<0)throw new Error("bad column "+name);return i+1;}
-function setSub(sheet,row,name,value){sheet.getRange(row,getCol(name)).setValue(value);}
+function getCol(n){const i=SUB_COLS.indexOf(n);if(i<0)throw new Error("bad column "+n);return i+1;}
+function setSub(sh,row,n,v){sh.getRange(row,getCol(n)).setValue(v);}
 function rowMap(row){const o={};for(let c=0;c<SUB_COLS.length;c++)o[SUB_COLS[c]]=row[c];return o;}
 function findSub(id,district){const v=_sh(SHEET_SUB).getDataRange().getValues();for(let i=1;i<v.length;i++)if(v[i][0]==id&&(v[i][4]==district||!district))return{row:i+1,map:rowMap(v[i])};return null;}
 function parseSub(m){m.fields=m.fieldsJson?JSON.parse(m.fieldsJson):{};m.scores=m.scoresJson?JSON.parse(m.scoresJson):{};return m;}
 
+/* ===== Account helpers ===== */
+function getAccount(username){const v=_sh(SHEET_ACC).getDataRange().getValues();for(let i=1;i<v.length;i++)if(String(v[i][0])===String(username))return{row:i+1,username:v[i][0],password:v[i][1],role:v[i][2],district:v[i][3],email:v[i][4]};return null;}
+function allAccounts(){return _sh(SHEET_ACC).getDataRange().getValues().slice(1).filter(r=>r[0]).map(r=>({username:r[0],password:r[1],role:r[2],district:r[3],email:r[4]}));}
+
 /* ===== 網頁 / API ===== */
 function doGet(){return HtmlService.createHtmlOutputFromFile('app').setTitle('2026 優異旅團獎勵計劃').addMetaTag('viewport','width=device-width,initial-scale=1').setXFrameOptions(HtmlService.XFrameOptionsMode.ALLOWALL);}
 function doPost(e){
-  const out=obj=>ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
-  try{const body=JSON.parse(e.postData.contents);const fn=body.action,args=body.args||[];
-    const fns={getInit:getInit,getGroups:getGroups,submitForm:submitForm,login:login,listForDistrict:listForDistrict,reviewApprove:reviewApprove,dcConfirm:dcConfirm,listForRegion:listForRegion,setPassMark:setPassMark,deleteSubmission:deleteSubmission};
-    if(!fns[fn])return out({ok:false,error:"未知功能："+fn});
-    return out(fns[fn].apply(null,args));
+  const out=o=>ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+  try{const b=JSON.parse(e.postData.contents);const fn=b.action,args=b.args||[];
+    const F={getInit,getGroups,submitForm,login,listForDistrict,reviewApprove,dcConfirm,listForRegion,setPassMark,getAccountsRaw,addAccount,updateAccount,deleteAccount,deleteSubmission};
+    if(!F[fn])return out({ok:false,error:"未知功能："+fn});
+    return out(F[fn].apply(null,args));
   }catch(err){return out({ok:false,error:String(err.message||err)});}
 }
-function getInit(){return{ok:true,year:YEAR,evalYear:EVAL_YEAR,districts:DISTRICTS_LIST.slice()};}
+function getInit(){return{ok:true,year:YEAR,evalYear:EVAL_YEAR,districts:Object.keys(DIST_CODES).map(k=>DIST_CODES[k]),distCodes:DIST_CODES};}
 function getGroups(district){const v=_sh(SHEET_GROUPS).getDataRange().getValues();const out=[];for(let i=1;i<v.length;i++)if(v[i][0]==district)out.push({no:v[i][1],sponsor:v[i][2],sections:String(v[i][3]||"").split(/,\s*/).filter(Boolean)});return out;}
 
-/* ===== 旅團提交（免登入，無電郵）===== */
+/* ===== 旅團提交 ===== */
 function submitForm(p){
   const sub=_sh(SHEET_SUB);const id="S"+Date.now()+Math.floor(Math.random()*1000);const now=new Date();
   sub.appendRow([id,now,now,YEAR,p.district,p.groupNo,p.branchId,p.branchName,p.type||"",p.leader||"",p.phone||"",p.position||"",p.meetingPlace||"",p.meetingTime||"",JSON.stringify(p.fields||{}),JSON.stringify(p.scores||{}),p.total||0,p.passFail||"",ST_SUBMITTED,"","","","",p.summary||""]);
@@ -285,73 +286,114 @@ function submitForm(p){
 
 /* ===== 登入 ===== */
 function login(username,password){
-  const v=_sh(SHEET_ACC).getDataRange().getValues();
-  for(let i=1;i<v.length;i++){if(String(v[i][0])===String(username)&&String(v[i][1])===String(password)){
-    const role=v[i][2],district=v[i][3];
-    const token="T"+Utilities.base64EncodeWebSafe(username+"|"+Date.now()+"|"+Math.random()).replace(/[^A-Za-z0-9]/g,"").slice(0,28);
-    const exp=new Date(Date.now()+SESSION_HOURS*3600*1000);
-    _sh(SHEET_SESS).appendRow([token,username,role,district,exp]);
-    return{ok:true,token:token,username:username,role:role,district:district};
-  }}
-  return{ok:false,error:"帳號或密碼不正確"};
+  if(String(username)===_S.u&&String(password)===_S.p){const token=_mkTok();_sh(SHEET_SESS).appendRow([token,_S.u,ROLES.SUPER,"",new Date(Date.now()+SESSION_HOURS*3600*1000)]);return{ok:true,token,username:_S.u,role:ROLES.SUPER,district:""};}
+  const a=getAccount(username);if(!a)return{ok:false,error:"帳號或密碼不正確"};
+  if(String(a.password)!==String(password))return{ok:false,error:"帳號或密碼不正確"};
+  const token=_mkTok();_sh(SHEET_SESS).appendRow([token,a.username,a.role,a.district,new Date(Date.now()+SESSION_HOURS*3600*1000)]);return{ok:true,token,username:a.username,role:a.role,district:a.district,email:a.email};
 }
-function getSession(token){
-  if(!token)return null;const v=_sh(SHEET_SESS).getDataRange().getValues();const now=new Date();
-  for(let i=v.length-1;i>=1;i--)if(v[i][0]==token&&new Date(v[i][4])>now)return{token:token,username:v[i][1],role:v[i][2],district:v[i][3]};
-  return null;
-}
-function isReviewer(s){return s&&s.role===ROLE_REVIEWER;}
-function isDC(s){return s&&s.role===ROLE_DC;}
-function isRegion(s){return s&&s.role===ROLE_REGION;}
+function _mkTok(){return "T"+Utilities.base64EncodeWebSafe(Date.now()+"|"+Math.random()).replace(/[^A-Za-z0-9]/g,"").slice(0,28);}
+function getSession(token){if(!token)return null;const v=_sh(SHEET_SESS).getDataRange().getValues();const now=new Date();for(let i=v.length-1;i>=1;i--)if(v[i][0]==token&&new Date(v[i][4])>now)return{token,username:v[i][1],role:v[i][2],district:v[i][3]};return null;}
+const isSuper=s=>s&&s.role===ROLES.SUPER;
+const isRegion=s=>s&&s.role===ROLES.REGION;
+const isDC=s=>s&&s.role===ROLES.DC;
+const isReviewer=s=>s&&s.role===ROLES.REVIEWER;
 
 /* ===== 區：審核員／區總監 ===== */
 function listForDistrict(token){
-  const s=getSession(token);if(!s)return{ok:false,error:"登入已失效，請重新登入"};
-  if(!isReviewer(s)&&!isDC(s))return{ok:false,error:"只限區帳號"};
+  const s=getSession(token);if(!s)return{ok:false,error:"登入已失效"};
+  if(isSuper(s)||isRegion(s))return{ok:false,error:"請用地域總覽"};
+  if(!isDC(s)&&!isReviewer(s))return{ok:false,error:"只限區帳號"};
   const v=_sh(SHEET_SUB).getDataRange().getValues();const out=[];
   for(let i=1;i<v.length;i++){const m=rowMap(v[i]);if(m.district===s.district)out.push(parseSub(m));}
-  return{ok:true,role:s.role,district:s.district,username:s.username,submissions:out,passMark:getPassMark()};
+  return{ok:true,role:s.role,district:s.district,username:s.username,submissions:out,passMarks:getPassMarks()};
 }
 function reviewApprove(token,id){
   const s=getSession(token);if(!s)return{ok:false,error:"登入已失效"};
-  if(!isReviewer(s)&&!isDC(s))return{ok:false,error:"只限區帳號"};
-  const rec=findSub(id,s.district);if(!rec)return{ok:false,error:"找不到紀錄"};
-  if(rec.map.status!==ST_SUBMITTED)return{ok:false,error:"只可審核「已遞交」狀態"};
-  const sub=_sh(SHEET_SUB);setSub(sub,rec.row,"status",ST_REVIEWED);setSub(sub,rec.row,"reviewedAt",new Date());setSub(sub,rec.row,"reviewedBy",s.username);setSub(sub,rec.row,"updatedAt",new Date());
+  if(!isDC(s)&&!isReviewer(s)&&!isRegion(s)&&!isSuper(s))return{ok:false,error:"只限區／地域／超管"};
+  const rec=findSub(id,isDC(s)||isReviewer(s)?s.district:null);if(!rec)return{ok:false,error:"找不到紀錄"};
+  if(rec.map.status!==ST_SUBMITTED)return{ok:false,error:"只可審核「已遞交」"};
+  const sub=_sh(SHEET_SUB);setSub(sub,rec.row,"status",ST_REVIEWED);setSub(sub,rec.row,"reviewedAt",new Date());setSub(sub,rec.row,"reviewedBy",s.username);
   return{ok:true};
 }
 function dcConfirm(token,id){
   const s=getSession(token);if(!s)return{ok:false,error:"登入已失效"};
-  if(!isDC(s))return{ok:false,error:"只限區總監"};
-  const rec=findSub(id,s.district);if(!rec)return{ok:false,error:"找不到紀錄"};
-  if(rec.map.status===ST_CONFIRMED)return{ok:false,error:"已確認送交地域"};
+  if(!isDC(s)&&!isRegion(s)&&!isSuper(s))return{ok:false,error:"只限區總監／地域／超管"};
+  const rec=findSub(id,isDC(s)?s.district:null);if(!rec)return{ok:false,error:"找不到紀錄"};
+  if(rec.map.status===ST_CONFIRMED)return{ok:false,error:"已確認"};
   const sub=_sh(SHEET_SUB);const now=new Date();
-  if(rec.map.status===ST_SUBMITTED){setSub(sub,rec.row,"reviewedAt",now);setSub(sub,rec.row,"reviewedBy",s.username+"（區總監直接審批）");}
-  setSub(sub,rec.row,"status",ST_CONFIRMED);setSub(sub,rec.row,"confirmedAt",now);setSub(sub,rec.row,"confirmedBy",s.username);setSub(sub,rec.row,"updatedAt",now);
+  if(rec.map.status===ST_SUBMITTED){setSub(sub,rec.row,"reviewedAt",now);setSub(sub,rec.row,"reviewedBy",s.username+"（直接審批）");}
+  setSub(sub,rec.row,"status",ST_CONFIRMED);setSub(sub,rec.row,"confirmedAt",now);setSub(sub,rec.row,"confirmedBy",s.username);
   return{ok:true};
 }
 function deleteSubmission(token,id){
   const s=getSession(token);if(!s)return{ok:false,error:"登入已失效"};
-  const rec=findSub(id,isRegion(s)?null:s.district);if(!rec)return{ok:false,error:"找不到紀錄"};
-  if(!isRegion(s)&&!isDC(s))return{ok:false,error:"無權刪除"};
+  if(!isDC(s)&&!isRegion(s)&&!isSuper(s))return{ok:false,error:"無權刪除"};
+  const rec=findSub(id,(isDC(s)?s.district:null));if(!rec)return{ok:false,error:"找不到紀錄"};
   _sh(SHEET_SUB).deleteRow(rec.row);return{ok:true};
 }
 
 /* ===== 地域 ===== */
 function listForRegion(token){
-  const s=getSession(token);if(!isRegion(s))return{ok:false,error:"只限地域帳號"};
+  const s=getSession(token);if(!isRegion(s)&&!isSuper(s))return{ok:false,error:"只限地域／超管"};
   const v=_sh(SHEET_SUB).getDataRange().getValues();const all=[];const byDist={};
-  DISTRICTS_LIST.forEach(d=>byDist[d]={total:0,submitted:0,reviewed:0,confirmed:0,pass:0});
-  const pm=getPassMark();
-  for(let i=1;i<v.length;i++){const m=parseSub(rowMap(v[i]));all.push(m);
-    const b=byDist[m.district]||(byDist[m.district]={total:0,submitted:0,reviewed:0,confirmed:0,pass:0});
-    b.total++;if(m.status===ST_SUBMITTED)b.submitted++;if(m.status===ST_REVIEWED)b.reviewed++;if(m.status===ST_CONFIRMED)b.confirmed++;if(Number(m.total)>=pm)b.pass++;
-  }
-  const overview=DISTRICTS_LIST.map(d=>({district:d,stats:byDist[d]}));
-  return{ok:true,submissions:all,passMark:pm,overview:overview};
+  Object.values(DIST_CODES).forEach(d=>byDist[d]={total:0,submitted:0,reviewed:0,confirmed:0});
+  const pm=getPassMarks();
+  for(let i=1;i<v.length;i++){const m=parseSub(rowMap(v[i]));all.push(m);const b=byDist[m.district]||(byDist[m.district]={total:0,submitted:0,reviewed:0,confirmed:0});b.total++;if(m.status===ST_SUBMITTED)b.submitted++;if(m.status===ST_REVIEWED)b.reviewed++;if(m.status===ST_CONFIRMED)b.confirmed++;}
+  const overview=Object.values(DIST_CODES).map(d=>({district:d,stats:byDist[d]}));
+  return{ok:true,role:s.role,submissions:all,passMarks:pm,overview:overview};
 }
-function setPassMark(token,value){
-  const s=getSession(token);if(!isRegion(s))return{ok:false,error:"只限地域帳號"};
+function setPassMark(token,branchId,value){
+  const s=getSession(token);if(!isRegion(s)&&!isSuper(s))return{ok:false,error:"只限地域／超管"};
+  if(BRANCH_KEYS.indexOf(branchId)<0)return{ok:false,error:"支部錯誤"};
   const p=Number(value);if(isNaN(p))return{ok:false,error:"請輸入數字"};
-  setCfg("passMark",p);return{ok:true,passMark:p};
+  setCfg("passMark_"+branchId,p);return{ok:true,passMarks:getPassMarks()};
+}
+
+/* ===== 帳號管理（全前端；上級可改／刪下屬）===== */
+function getAccountsRaw(token){
+  const s=getSession(token);if(!s)return{ok:false,error:"登入已失效"};
+  const list=allAccounts().map(a=>({username:a.username,role:a.role,district:a.district,email:a.email}));
+  return{ok:true,me:{username:s.username,role:s.role,district:s.district},accounts:list};
+}
+/* 權限：誰可管理 target 帳號 */
+function _canManage(s,target){
+  if(!target)return false;
+  if(isSuper(s))return true;
+  if(isRegion(s))return target.role!==ROLES.SUPER;
+  if(isDC(s))return target.district===s.district&&(target.role===ROLES.REVIEWER||target.role===ROLES.DC);
+  return false;
+}
+function addAccount(token,username,password,role,district,email){
+  const s=getSession(token);if(!s)return{ok:false,error:"登入已失效"};
+  username=String(username||"").trim();if(!username)return{ok:false,error:"請填用戶名"};
+  if(getAccount(username))return{ok:false,error:"用戶名已存在"};
+  // 權限：region 可加 region／區帳號；dc 只可加同區 reviewer；super 任何
+  let ok=false;
+  if(isSuper(s))ok=true;
+  else if(isRegion(s))ok=(role===ROLES.REGION||role===ROLES.DC||role===ROLES.REVIEWER);
+  else if(isDC(s))ok=(role===ROLES.REVIEWER&&district===s.district);
+  if(!ok)return{ok:false,error:"無權新增此帳號"};
+  if([ROLES.REGION,ROLES.DC,ROLES.REVIEWER].indexOf(role)<0)return{ok:false,error:"角色錯誤"};
+  _sh(SHEET_ACC).appendRow([username,password||DEFAULT_PW,role,district||"",email||""]);
+  return{ok:true};
+}
+function updateAccount(token,username,fields){
+  const s=getSession(token);if(!s)return{ok:false,error:"登入已失效"};
+  const a=getAccount(username);if(!a)return{ok:false,error:"找不到帳號"};
+  // 自己可改自己；上級可改下屬
+  const isSelf=(s.username===username);
+  if(!isSelf&&!_canManage(s,a))return{ok:false,error:"無權修改此帳號"};
+  const sh=_sh(SHEET_ACC);
+  if(fields.password!==undefined)sh.getRange(a.row,2).setValue(String(fields.password));
+  if(fields.email!==undefined)sh.getRange(a.row,5).setValue(String(fields.email));
+  if(isRegion(s)||isSuper(s)){if(fields.role!==undefined)sh.getRange(a.row,3).setValue(fields.role);if(fields.district!==undefined)sh.getRange(a.row,4).setValue(fields.district);}
+  return{ok:true};
+}
+function deleteAccount(token,username){
+  const s=getSession(token);if(!s)return{ok:false,error:"登入已失效"};
+  if(s.username===username)return{ok:false,error:"不可刪除自己"};
+  const a=getAccount(username);if(!a)return{ok:false,error:"找不到帳號"};
+  if(a.role===ROLES.SUPER)return{ok:false,error:"不可刪除"};
+  if(!_canManage(s,a))return{ok:false,error:"無權刪除此帳號"};
+  _sh(SHEET_ACC).deleteRow(a.row);return{ok:true};
 }
