@@ -64,7 +64,7 @@ footer.bar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#fff;bor
 @media print{#app{display:block!important}table{font-size:11px}th{background:#333!important;color:#fff!important;-webkit-print-color-adjust:exact}td,th{border:1px solid #999!important;padding:3px 5px}header.top,footer.bar,.bar-btns,.btn,.steps{display:none!important}body{background:#fff}}
 @media(max-width:600px){.top-in h1{font-size:14px}.total-box .val{font-size:20px}.btn{padding:9px 11px;font-size:12px}}
 </style></head><body>
-<header class="top"><div class="top-in"><h1>🏕️ 2026 優異旅團評分系統</h1><span class="sub" id="topSub">港島地域</span><span id="verBadge" style="background:#fff;color:#1b5e20;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800;margin-left:6px">v39</span></div></header>
+<header class="top"><div class="top-in"><h1>🏕️ 2026 優異旅團評分系統</h1><span class="sub" id="topSub">港島地域</span><span id="verBadge" style="background:#fff;color:#1b5e20;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800;margin-left:6px">v42</span></div></header>
 <main><div id="app"></div></main>
 <footer class="bar" id="formBar" style="display:none"><div class="bar-in"><div class="total-box"><span class="lbl">總分</span><span class="val" id="totalVal">0</span><span class="pf" id="pfVal">—</span></div><div class="bar-btns" id="barBtns"></div></div></footer>
 <div id="toast" class="toast" style="display:none"></div>
@@ -78,7 +78,7 @@ footer.bar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#fff;bor
 function gas(fn){return function(){var args=[].slice.call(arguments);return new Promise(function(res,rej){
   if(previewMode){setTimeout(function(){try{res((MOCK_API[fn]||function(){return{ok:false,error:"未知功能"};}).apply(null,args));}catch(e){rej(e);}},0);return;}
   if(typeof google!=="undefined"&&google.script&&google.script.run){
-    try{google.script.run.withSuccessHandler(function(v){if(v===null||v===undefined){rej(new Error("伺服器冇回應（可能初始化中），請等幾秒再試"));}else{res(v);}}).withFailureHandler(rej)[fn].apply(google.script.run,args);}catch(e){rej(e);}
+    try{google.script.run.withSuccessHandler(function(v){if(v===null||v===undefined){rej(new Error("伺服器沒有回應（可能因後端版本過舊或序列化失敗，請更新至 v42 或以上）"));}else{res(v);}}).withFailureHandler(rej)[fn].apply(google.script.run,args);}catch(e){rej(e);}
     return;
   }
   if(BACKEND_URL){
@@ -437,12 +437,12 @@ function renderDistrictDash(r){currentDashR=r;ensureBackBtn();
   const bb={};BRANCH_ORDER.forEach(function(b){bb[b.id]=0;});list.forEach(function(x){if(x.branchId in bb)bb[x.branchId]++;});
   let hh='<div class="card"><h3 style="margin:0;color:var(--theme)">'+esc(r.district)+" — "+(isDC?"區總監":"審核員")+"（"+esc(r.username)+"）</h3></div>";
   hh+='<div class="steps" style="flex-wrap:wrap">'+btabs.join("")+'</div>';
-  hh+='<div class="card"><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><b style="color:var(--theme);margin-right:6px">本區已遒交：'+list.length+'</b>'+BRANCH_ORDER.map(function(b){const c=BRANCH_COLORS[b.id]||{};return '<span class="pill" style="background:'+c.l+";color:"+c.c+'">'+(c.dot||"")+" "+b.name+" "+bb[b.id]+'</span>';}).join("")+'</div></div>';
+  hh+='<div class="card"><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><b style="color:var(--theme);margin-right:6px">本區已遞交：'+list.length+'</b>'+BRANCH_ORDER.map(function(b){const c=BRANCH_COLORS[b.id]||{};return '<span class="pill" style="background:'+c.l+";color:"+c.c+'">'+(c.dot||"")+" "+b.name+" "+bb[b.id]+'</span>';}).join("")+'</div></div>';
   if(!filtered.length){hh+='<div class="card" style="text-align:center;color:var(--muted);padding:30px">沒有紀錄</div>';}
   else{
     hh+='<div class="card"><div class="dwrap"><table class="dtable"><thead><tr><th>旅團</th><th>支部</th><th>總分</th><th>合格線</th><th>合格</th><th>狀態</th><th>操作</th></tr></thead><tbody>';
-    filtered.forEach(function(x){const line=pm[x.branchId]||0;const pass=Number(x.total)>=line;const sp=x.status==="已確認"?"pill-app":(x.status==="已審核"?"pill-sub":"pill-draft");
-      hh+='<tr style="cursor:pointer" onclick="viewSub(\''+x.id+'\')"><td><b>'+esc(x.groupNo)+'</b><br><span style="font-size:11px;color:#777">'+esc(x.leader||"-")+'</span></td><td>'+esc(x.branchName)+'</td><td><b>'+x.total+'</b></td><td>'+line+'</td><td><span class="pill '+(pass?"pill-pass":"pill-fail")+'">'+(pass?"合格":"未達線")+'</span></td><td><span class="pill '+sp+'">'+esc(x.status)+'</span></td><td class="row-act" onclick="event.stopPropagation()">'+(x.status==="已遒交"?'<button class="mini pri" onclick="doReview(\''+x.id+'\')">檢核</button>':"")+(x.status==="已審核"&&isDC?'<button class="mini pri" onclick="doConfirm(\''+x.id+'\')">確認送地域</button>':"")+'<button class="mini" onclick="viewSub(\''+x.id+'\')">檢視</button>'+(isDC?'':"")+'</td></tr>';});
+    filtered.forEach(function(x){const line=(pm||{})[x.branchId]||0;const pass=Number(x.total)>=line;const sp=x.status==="已確認"?"pill-app":(x.status==="已審核"?"pill-sub":"pill-draft");
+      hh+='<tr style="cursor:pointer" onclick="viewSub(\''+x.id+'\')"><td><b>'+esc(x.groupNo)+'</b><br><span style="font-size:11px;color:#777">'+esc(x.leader||"-")+'</span></td><td>'+esc(x.branchName)+'</td><td><b>'+x.total+'</b></td><td>'+line+'</td><td><span class="pill '+(pass?"pill-pass":"pill-fail")+'">'+(pass?"合格":"未達線")+'</span></td><td><span class="pill '+sp+'">'+esc(x.status)+'</span></td><td class="row-act" onclick="event.stopPropagation()">'+(x.status==="已遞交"?'<button class="mini pri" onclick="doReview(\''+x.id+'\')">檢核</button>':"")+(x.status==="已審核"&&isDC?'<button class="mini pri" onclick="doConfirm(\''+x.id+'\')">確認送地域</button>':"")+'<button class="mini" onclick="viewSub(\''+x.id+'\')">檢視</button>'+(isDC?'':"")+'</td></tr>';});
     hh+='</tbody></table></div></div>';
   }
   show(hh);
@@ -517,7 +517,7 @@ function renderRegionDash(){ensureBackBtn();
   }
   const filtered=regionTab?list.filter(function(x){return x.district===regionTab;}):list;
   const sorted=filtered.slice().sort(function(a,b){return (a.district||"").localeCompare(b.district||"");});
-  hh+='<div class="card"><h4 style="margin:0 0 8px">'+(regionTab?regionTab+" ":"")+'遒交紀錄 ('+filtered.length+')</h4><div class="dwrap"><table class="dtable"><thead><tr><th>區</th><th>旅團</th><th>支部</th><th>總分</th><th>合格</th><th>狀態</th><th>區批</th><th>區總監批核</th><th>操作</th></tr></thead><tbody>';
+  hh+='<div class="card"><h4 style="margin:0 0 8px">'+(regionTab?regionTab+" ":"")+'遞交紀錄 ('+filtered.length+')</h4><div class="dwrap"><table class="dtable"><thead><tr><th>區</th><th>旅團</th><th>支部</th><th>總分</th><th>合格</th><th>狀態</th><th>區批</th><th>區總監批核</th><th>操作</th></tr></thead><tbody>';
   sorted.forEach(function(x){const line=pm[x.branchId]||0;const pass=Number(x.total)>=line;const sp=x.status==="已確認"?"pill-app":(x.status==="已審核"?"pill-sub":"pill-draft");
     hh+='<tr style="cursor:pointer" onclick="viewSub(\''+x.id+'\')"><td>'+esc(x.district)+'</td><td><b>'+esc(x.groupNo)+'</b></td><td>'+esc(x.branchName)+'</td><td><b>'+x.total+'</b></td><td><span class="pill '+(pass?"pill-pass":"pill-fail")+'">'+(pass?"合格":"未達線")+'</span></td><td><span class="pill '+sp+'">'+esc(x.status)+'</span></td><td style="font-size:11px;color:#555">'+(x.reviewedBy?esc(x.reviewedBy):"-")+'</td><td style="font-size:11px;color:#555">'+(x.confirmedBy?esc(x.confirmedBy):"-")+'</td><td class="row-act" onclick="event.stopPropagation()"><button class="mini" onclick="viewSub(\''+x.id+'\')">檢視</button></td></tr>';});
   hh+='</tbody></table></div></div>';
@@ -561,7 +561,7 @@ function printRegionStats(){
     html+='<tr><td>'+d+'</td>';bk.forEach(function(k){html+='<td>'+c[k]+'</td>';});html+='<td><b>'+subs.length+'</b></td></tr>';});
   html+='<tr style="background:#eee"><td><b>合計</b></td>';bk.forEach(function(k){html+='<td><b>'+tot[k]+'</b></td>';});html+='<td><b>'+submissionsCache.length+'</b></td></tr>';
   html+='</tbody></table>';
-  html+='<h3>全部遒交紀錄</h3><table border="1" cellpadding="5" style="border-collapse:collapse;width:100%;font-size:12px"><thead><tr><th>區</th><th>旅團</th><th>支部</th><th>總分</th><th>合格</th><th>狀態</th></tr></thead><tbody>';
+  html+='<h3>全部遞交紀錄</h3><table border="1" cellpadding="5" style="border-collapse:collapse;width:100%;font-size:12px"><thead><tr><th>區</th><th>旅團</th><th>支部</th><th>總分</th><th>合格</th><th>狀態</th></tr></thead><tbody>';
   submissionsCache.forEach(function(x){var line=pm[x.branchId]||0;html+='<tr><td>'+esc(x.district)+'</td><td>'+esc(x.groupNo)+'</td><td>'+esc(x.branchName)+'</td><td>'+x.total+'</td><td>'+(Number(x.total)>=line?"合格":"未達線")+'</td><td>'+esc(x.status)+'</td></tr>';});
   html+='</tbody></table><p style="text-align:center;color:#999;font-size:11px;margin-top:20px">Scout System</p></div>';
   show(html);setBar('<button class="btn btn-sec" onclick="goDash()">← 返回</button><button class="btn btn-pri" onclick="window.print()">🖨️ 列印</button>',false);ensureBackBtn();
@@ -576,7 +576,7 @@ function printDistrictStats(){
   html+='</tbody></table><p style="text-align:center;color:#999;font-size:11px;margin-top:20px">Scout System</p></div>';
   show(html);setBar('<button class="btn btn-sec" onclick="goDash()">← 返回</button><button class="btn btn-pri" onclick="window.print()">🖨️ 列印</button>',false);ensureBackBtn();
 }
-var previewMode=false,FIELDS_SRC=null;var APP_VER="v41";var BACKEND_URL="https://script.google.com/macros/s/AKfycbyOXyISIolfDFMcX7s1LnqsHdVA99J-4Fti1lv7KcpCrx6DaJi-LKZHxRtKiba39Jsd/exec";
+var previewMode=false,FIELDS_SRC=null;var APP_VER="v42";var BACKEND_URL="https://script.google.com/macros/s/AKfycbyOXyISIolfDFMcX7s1LnqsHdVA99J-4Fti1lv7KcpCrx6DaJi-LKZHxRtKiba39Jsd/exec";
 var MOCK={submissions:[],sessions:{},accounts:null,passMarks:null};
 function mockSave(){try{localStorage.setItem("dga_mock",JSON.stringify(MOCK));}catch(e){}}
 function mockLoad(){try{const s=JSON.parse(localStorage.getItem("dga_mock")||"null");if(s)MOCK=s;}catch(e){}if(!MOCK.submissions)MOCK.submissions=[];if(!MOCK.sessions)MOCK.sessions={};}
@@ -613,6 +613,10 @@ const MOCK_API={
 function waitForGas(max){
   max=max||80;
   return new Promise(function(resolve){
+    if(typeof location!=="undefined"&&location.hostname&&!location.hostname.includes("google.com")&&!location.hostname.includes("googleusercontent.com")){
+      resolve(false);
+      return;
+    }
     var n=0;
     (function check(){
       if(typeof google!=="undefined"&&google.script&&google.script.run){resolve(true);return;}
@@ -637,6 +641,7 @@ function showBootError(msg){
     '</div>');
 }
 function boot(){
+  var vb=document.getElementById("verBadge");if(vb)vb.textContent=APP_VER;
   // GAS 沙盒：等 google.script.run（最多 8s）；外部 HTML 設咗 BACKEND_URL 就快啲放棄（2.5s）改用 fetch
   waitForGas(BACKEND_URL?25:80).then(function(){
     gas("getInit")().then(function(init){Object.assign(INIT,init);$("#topSub").textContent="Scout System";goHome();})

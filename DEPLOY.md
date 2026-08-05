@@ -1,4 +1,4 @@
-# 🚀 部署指南（單檔版 · v40 · 一個 Code.gs 搞掂）
+# 🚀 部署指南（單檔版 · v42 · 一個 Code.gs 搞掂）
 
 ## 部署 GAS（約 5 分鐘）
 1. [Google Sheets](https://sheets.google.com) 新增試算表 → **擴充功能 → Apps Script**。
@@ -10,21 +10,21 @@
    - 執行身分：**我**
    - 存取權：**任何人**
    - → 部署 → 複製 `/exec` URL（首次會要授權：檢視權限→選帳號→進階→前往→允許）。
-5. **開嗰個 `/exec` URL** → 系統會**自動初始化**（建表 + 帳號 + Excel 模板），第一次稍慢。
+5. **開嗰個 `/exec` URL** → 系統會**自動初始化**（建表 + 帳號 + 合格線）。
 6. login：`HKIR / 1234`（地域）、`CHW / 1234`（區）、`CHWDC / 1234`（區總監）、隱藏超管。
 
-> ✅ v40 起**唔使手動 run setup()**——開網址會自動做。
+> ✅ v42 起徹底解決「填表後登入崩潰（Null 異常）」及 GAS RPC Date 物件序列化問題，並於開網址時自動完成初始化（唔使手動 run setup()）。
 > （想提前拎試算表網址：喺編輯器 run 一次 `setup()`，都係安全嘅，幂等唔會洗資料。）
 
 ## 之後改 code
 **部署 → 管理部署 → 編輯（鉛筆）→ 版本揀「新版本」→ 部署**。
-同一個部署嘅 `/exec` URL **唔會變**，所以 `index.html` 轉向網址都唔使改。
+同一個部署嘅 `/exec` URL **唔會變**。
 
-## index.html（Git／自訂網域用）
-`index.html` 係一個**轉向頁**，會跳去 GAS `/exec` URL。
-- 放上 GitHub Pages／Vercel → 畀人一個靚網址，自動跳去系統。
-- **唔好刪** index.html，否則 Git 網址會 404。
-- 改咗 GAS 部署 URL（新建部署）→ 記得更新 index.html 入面嗰兩個 URL。
+## index.html（Git／自訂網域用：不再突登轉向）
+`index.html` 現已升級為**完整單頁前端（SPA）**，不再跳轉去 GAS `/exec` URL！
+- 放上 GitHub Pages／Vercel → 畀人一個靚網址，打開**不會再跳走去 `script.google.com`**（不再出現 Google 黃藍警告條），直接喺靚網址中使用。
+- 前端會自動透過 `fetch POST` 後台連接 `BACKEND_URL`（GAS 後端）。
+- 如將來改咗 GAS 部署 URL（新建部署），只需更新 `index.html` / `app.html` 入面的 `BACKEND_URL` 變數即可。
 
 ## 帳號一覽（密碼皆 `1234`）
 - 地域：`HKIR`
@@ -36,4 +36,4 @@
 刪掉試算表（Drive 入面「DGA2026_優異旅團評分系統」），下次開網址自動重建。
 
 ---
-Scout System · v40 · COPYRIGHT 2026
+Scout System · v42 · COPYRIGHT 2026
