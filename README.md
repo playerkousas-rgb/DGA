@@ -3,10 +3,10 @@
 港島地域（HKIR）· **一個 Apps Script 檔（Code.gs）搞掂**：前端＋後端＋試算表，全部喺同一個 GAS 入面。
 
 ## 點運作
-- `apps-script/Code.gs` 一個檔，前端正以 **base64 包埋**喺入面，`doGet` 解碼還原成網頁。
-- 前端透過 **`google.script.run`** 直接寫入後端——單一 GAS 沙盒，最穩，唔使 CORS／Vercel。
+- `apps-script/Code.gs` 一個檔，前端正以 **base64 包埋**喺入面，`doGet` 解碼還原成網頁（GAS 部署專用）。
+- 前端透過 **`google.script.run`**（在 GAS 沙盒內）或 **`fetch POST`**（在 GitHub Pages／Vercel 外部網址）直接寫入後端。
 - **首次開網址自動初始化**：自動建立試算表 + 帳號 + 合格線。**唔使手動 run setup()。**
-- `index.html` 只係一個**轉向頁**（跳去 GAS `/exec` 網址），等 Git／自訂網域唔好 404。
+- `index.html` 現已升級為**完整單頁應用（SPA）前端**，打開 GitHub Pages / Vercel 網址**不再突登轉向跳走**，保留自訂靚網址，並直接以 fetch 通訊連接後端。
 
 ## 帳號（自動建立，密碼預設 `1234`）
 - **地域**：`HKIR`
@@ -27,10 +27,10 @@
 
 ## 檔案
 ```
-apps-script/Code.gs          ★ 後端＋前端（base64 內嵌），單檔部署
+apps-script/Code.gs          ★ 後端＋前端（base64 內嵌），單檔部署（v42）
 apps-script/app.html           前端原始碼（參考／改 UI 用；已包入 Code.gs）
-apps-script/上線指南-v40.md     上線 3 步（逐段 copy-paste）
-index.html                     轉向頁（→ GAS /exec，Git 唔好刪，否則 404）
+apps-script/上線指南-v42.md     上線 3 步（逐段 copy-paste）
+index.html                     完整單頁前端（SPA），在外部網址開啟不跳走（直接連接 GAS API）
 vercel.json                    純靜態設定（可選）
 DEPLOY.md                      詳細部署
 data/groups.json               201 旅團資料
@@ -39,11 +39,13 @@ docs/                          教學（旅團／區幹事／地域管理員／M
 ```
 
 ## 🚀 最快上線（3 步）
-1. GAS 專案貼入 `apps-script/Code.gs`（或照 `上線指南-v40.md` 換 3 段）。
+1. GAS 專案貼入 `apps-script/Code.gs`（或照 `apps-script/上線指南-v42.md` 操作）。
 2. 部署 → 網頁應用程式（執行身分：我；存取權：任何人）→ 拎 `/exec` URL。
 3. 開 URL → **自動初始化** → 直接 `HKIR / 1234` login。
+
+> ★ **v42 修復重點**：徹底解決「填表後無法登入（返回 Null）」問題——由於 Sheet 讀出日期欄位時為 JavaScript `Date` 物件，而 GAS RPC (`google.script.run`) 嚴禁回傳 `Date` 物件導致通訊中斷崩潰，v42 已在 API 傳輸層自動把所有 Date 轉為 ISO 字串，並同步了根目錄與 `apps-script/` 的版本。
 
 之後改 code：**部署 → 管理部署 → 編輯 → 新版本**（同一個部署 URL 唔變）。
 
 ---
-Scout System · v40 · COPYRIGHT 2026
+Scout System · v42 · COPYRIGHT 2026
