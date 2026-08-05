@@ -576,7 +576,7 @@ function printDistrictStats(){
   html+='</tbody></table><p style="text-align:center;color:#999;font-size:11px;margin-top:20px">Scout System</p></div>';
   show(html);setBar('<button class="btn btn-sec" onclick="goDash()">← 返回</button><button class="btn btn-pri" onclick="window.print()">🖨️ 列印</button>',false);ensureBackBtn();
 }
-var previewMode=false,FIELDS_SRC=null;var APP_VER="v42";var BACKEND_URL="https://script.google.com/macros/s/AKfycbyOXyISIolfDFMcX7s1LnqsHdVA99J-4Fti1lv7KcpCrx6DaJi-LKZHxRtKiba39Jsd/exec";
+var previewMode=false,FIELDS_SRC=null;var APP_VER="v42";var BACKEND_URL="/api/gas";
 var MOCK={submissions:[],sessions:{},accounts:null,passMarks:null};
 function mockSave(){try{localStorage.setItem("dga_mock",JSON.stringify(MOCK));}catch(e){}}
 function mockLoad(){try{const s=JSON.parse(localStorage.getItem("dga_mock")||"null");if(s)MOCK=s;}catch(e){}if(!MOCK.submissions)MOCK.submissions=[];if(!MOCK.sessions)MOCK.sessions={};}
