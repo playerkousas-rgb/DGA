@@ -3,8 +3,8 @@
 ## 部署 GAS（約 5 分鐘）
 1. [Google Sheets](https://sheets.google.com) 新增試算表 → **擴充功能 → Apps Script**。
    （或直接去 [script.google.com](https://script.google.com) 新增獨立專案都得。）
-2. 刪走預設 `Code.gs` 全部內容，**貼上 `apps-script/Code.gs` 全部內容**。
-   （前端正以 base64 包埋喺入面，**唔使再另建 app.html**。）
+2. 刪走預設 `Code.gs` 全部內容，**貼上 `Code.gs` 全部內容**。
+   （前端正以 base64 包埋喺入面，**唔使再另建獨立 HTML 檔**。）
 3. 💾 儲存。
 4. **部署 → 新增部署 → 齒輪 ⚙️ → 網頁應用程式**
    - 執行身分：**我**
@@ -25,7 +25,7 @@
 `index.html` 現已升級為**完整單頁前端（SPA）**，不再跳轉去 GAS `/exec` URL！
 - 放上 GitHub Pages／Vercel → 畀人一個靚網址，打開**不會再跳走去 `script.google.com`**（不再出現 Google 黃藍警告條），直接喺靚網址中使用。
 - 前端會自動透過 `fetch POST` 後台連接 `BACKEND_URL`（GAS 後端）。
-- 如將來改咗 GAS 部署 URL（新建部署），只需更新 `index.html` / `app.html` 入面的 `BACKEND_URL` 變數即可。
+- 如將來改咗 GAS 部署 URL（新建部署），只需更新 `index.html` 入面嘅 `BACKEND_URL` 變數，或喺 Vercel 設定環境變數 `GAS_BACKEND_URL` 即可。
 
 ## 帳號一覽（密碼皆 `1234`）
 - 地域：`HKIR`
