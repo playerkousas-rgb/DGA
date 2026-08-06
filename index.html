@@ -63,7 +63,7 @@ footer.bar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#fff;bor
 @media print{#app{display:block!important}table{font-size:11px}th{background:#333!important;color:#fff!important;-webkit-print-color-adjust:exact}td,th{border:1px solid #999!important;padding:3px 5px}header.top,footer.bar,.bar-btns,.btn,.steps{display:none!important}body{background:#fff}}
 @media(max-width:600px){.top-in h1{font-size:14px}.total-box .val{font-size:20px}.btn{padding:9px 11px;font-size:12px}}
 </style></head><body>
-<header class="top"><div class="top-in"><h1>🏕️ 2026 優異旅團評分系統</h1><span class="sub" id="topSub">港島地域</span><span id="verBadge" style="background:#fff;color:#1b5e20;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800;margin-left:6px">v43</span></div></header>
+<header class="top"><div class="top-in"><h1>🏕️ <span id="topTitleYear">2026</span> 優異旅團評分系統</h1><span class="sub" id="topSub">港島地域</span><span id="verBadge" style="background:#fff;color:#1b5e20;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800;margin-left:6px">v44</span></div></header>
 <main><div id="app"><div class="card" style="text-align:center;padding:34px"><span class="spin"></span><p style="color:var(--muted);margin-top:12px">載入中… 連接後端</p></div></div></main>
 <footer class="bar" id="formBar" style="display:none"><div class="bar-in"><div class="total-box"><span class="lbl">總分</span><span class="val" id="totalVal">0</span><span class="pf" id="pfVal">—</span></div><div class="bar-btns" id="barBtns"></div></div></footer>
 <div id="toast" class="toast" style="display:none"></div>
@@ -84,7 +84,14 @@ function gas(fn){return function(){var args=[].slice.call(arguments);return new 
     fetch(BACKEND_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},redirect:"follow",body:JSON.stringify({action:fn,args:args})})
       .then(function(r){
         return r.text().then(function(t){
-          var o;try{o=JSON.parse(t);}catch(e){throw new Error("後端回傳咗非 JSON（可能 GAS 部署未開放「任何人」或網址過期）："+t.slice(0,160));}
+          var o;try{o=JSON.parse(t);}catch(e){
+            if(BACKEND_URL==="/api/gas"&&typeof DEFAULT_GAS_URL!=="undefined"&&DEFAULT_GAS_URL){
+              return fetch(DEFAULT_GAS_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},redirect:"follow",body:JSON.stringify({action:fn,args:args})})
+                .then(function(r2){return r2.text();})
+                .then(function(t2){var o2;try{o2=JSON.parse(t2);}catch(e2){throw new Error("後端回傳咗非 JSON："+t2.slice(0,160));}return o2;});
+            }
+            throw new Error("後端回傳咗非 JSON（可能 GAS 部署未開放「任何人」或網址過期）："+t.slice(0,160));
+          }
           return o;
         });
       })
@@ -93,7 +100,13 @@ function gas(fn){return function(){var args=[].slice.call(arguments);return new 
   }
   rej(new Error("偵測不到 google.script.run，亦冇設定 BACKEND_URL"));
 });};}
-const INIT={year:2026,evalYear:2025,districts:[],emails:{},regionEmail:""};
+const INIT={year:2026,evalYear:2025,evalDateStart:"2025-01-01",evalDateEnd:"2025-12-31",districts:[],emails:{},regionEmail:""};
+function applyYearUI(){
+  const y = INIT.year || 2026;
+  document.title = y + " 優異旅團評分系統";
+  const el = document.getElementById("topTitleYear");
+  if(el) el.textContent = y;
+}
 var session=null;        // {token,role,district}
 var ctx={};              // {district,groupNo,branchId,sponsor,sections}
 var submissionsCache=[];
@@ -378,8 +391,8 @@ function resetTheme(){const r=document.documentElement.style;r.setProperty("--th
 function branchButtonsHTML(ids){return ids.map(bid=>{const bn=BRANCH_ORDER.find(b=>b.id===bid);if(!bn)return"";const col=BRANCH_COLORS[bid]||{c:"#1b5e20",dot:""};return '<button class="btn branchpick" data-id="'+bid+'" style="background:'+col.c+';color:#fff;margin:5px;padding:16px 18px;min-width:150px">'+(col.dot||"")+" "+bn.name+'</button>';}).join("");}
 function wireBranchPick(){document.querySelectorAll(".branchpick").forEach(el=>el.addEventListener("click",function(){ctx.branchId=el.getAttribute("data-id");goGroup(4);}));}
 
-function formHeaderHTML(b,forGroup){const _info=forGroup?('<div class="grid2">'+selField("h_district","區別*",INIT.districts,true)+textField("h_groupNo","旅號／旅團名稱*","例：港島第17旅",true)+'</div>'):('<div class="readonly-info">旅號／旅團：<b>'+esc(ctx.groupNo)+'</b>　|　區別：<b>'+esc(ctx.district)+'</b>'+(ctx.sponsor?('<br>主辦機構：'+esc(ctx.sponsor)):'')+'</div>');return '<div class="card"><div style="font-weight:800;color:var(--theme);font-size:16px;margin-bottom:6px">'+b.name+' 評分表（'+INIT.year+' 年優異旅團）</div><div style="font-size:12px;color:var(--muted);margin-bottom:10px">香港童軍總會 ~ 港島地域　·　評選期：'+INIT.evalYear+'-01-01 至 '+INIT.evalYear+'-12-31</div>'+_info+'<div class="grid2">'+selField("h_type","團類別",b.typeOpts)+textField("h_meetingPlace","集會地點*","")+textField("h_meetingTime","集會時間","")+textField("h_leader","負責領袖姓名*","")+textField("h_phone","聯絡電話*","")+selField("h_position","童軍職位",b.positions)+textField("h_email","電郵地址*","")+'</div></div>';}
-function minStdHTML(b){const items=["1. 最少有 "+b.minMembers+" 名團員",b.minStd2,"3. 呈交 "+INIT.evalYear+"／"+INIT.year+" 年度財政報告","4. 於「青少年成員資訊系統」（YMIS）系統註冊"];return '<div class="card"><div class="sec-title">⭐ 最低標準（全部須達「有」方可獲評選）</div><div class="min-std">'+items.map((t,i)=>{const y=ynField("ms_"+i,t,0);return y.replace(' <em>(0分)</em>','');}).join("")+'</div><div class="blk-detail" id="det_ms"></div></div>';}
+function formHeaderHTML(b,forGroup){const y=INIT.year||2026, ey=INIT.evalYear||(y-1), eStart=INIT.evalDateStart||(ey+"-01-01"), eEnd=INIT.evalDateEnd||(ey+"-12-31");const _info=forGroup?('<div class="grid2">'+selField("h_district","區別*",INIT.districts,true)+textField("h_groupNo","旅號／旅團名稱*","例：港島第17旅",true)+'</div>'):('<div class="readonly-info">旅號／旅團：<b>'+esc(ctx.groupNo)+'</b>　|　區別：<b>'+esc(ctx.district)+'</b>'+(ctx.sponsor?('<br>主辦機構：'+esc(ctx.sponsor)):'')+'</div>');return '<div class="card"><div style="font-weight:800;color:var(--theme);font-size:16px;margin-bottom:6px">'+b.name+' 評分表（'+y+' 年優異旅團）</div><div style="font-size:12px;color:var(--muted);margin-bottom:10px">香港童軍總會 ~ 港島地域　·　評選期：'+eStart+' 至 '+eEnd+'</div>'+_info+'<div class="grid2">'+selField("h_type","團類別",b.typeOpts)+textField("h_meetingPlace","集會地點*","")+textField("h_meetingTime","集會時間","")+textField("h_leader","負責領袖姓名*","")+textField("h_phone","聯絡電話*","")+selField("h_position","童軍職位",b.positions)+textField("h_email","電郵地址*","")+'</div></div>';}
+function minStdHTML(b){const y=INIT.year||2026, ey=INIT.evalYear||(y-1);const items=["1. 最少有 "+b.minMembers+" 名團員",b.minStd2,"3. 呈交 "+ey+"／"+y+" 年度財政報告","4. 於「青少年成員資訊系統」（YMIS）系統註冊"];return '<div class="card"><div class="sec-title">⭐ 最低標準（全部須達「有」方可獲評選）</div><div class="min-std">'+items.map((t,i)=>{const y=ynField("ms_"+i,t,0);return y.replace(' <em>(0分)</em>','');}).join("")+'</div><div class="blk-detail" id="det_ms"></div></div>';}
 function sigHTML(){return '<div class="card"><div class="sec-title">✍️ 簽署／備註</div><div class="grid2">'+textField("sig_ev_name","評審員 姓名","")+textField("sig_ev_pos","評審員 職位","")+textField("sig_ev_date","評審員 日期","")+textField("sig_dc_date","區總監 日期","")+'</div></div>';}
 function renderForm(branchId,fields,forGroup){currentBranch=BRANCHES.find(b=>b.id===branchId)||BRANCHES[0];setBranchTheme(currentBranch.id);SCORES={};MIN_FAIL=false;let html=formHeaderHTML(currentBranch,forGroup)+minStdHTML(currentBranch);const secs={"甲":"（甲）童軍旅團標準","乙":"（乙）行政與財務管理","丙":"（丙）訓練與活動"};["甲","乙","丙"].forEach(sec=>{const blks=currentBranch.blocks.filter(bl=>bl.section===sec);if(!blks.length)return;html+='<div class="sec-title">'+secs[sec]+'</div>';blks.forEach(bl=>html+=bl.render());});if(!forGroup)html+=sigHTML();show(html);$("#app").querySelectorAll("input,select").forEach(el=>{el.addEventListener("input",recompute);el.addEventListener("change",recompute);});if(fields)Object.entries(fields).forEach(([k,v])=>{const els=document.querySelectorAll('[name="'+k+'"]');if(!els.length)return;if(els.length>1||els[0].type==="radio"){els.forEach(e=>e.checked=(e.value===v));}else els[0].value=v;});recompute();}
 function recompute(){let total=0;currentBranch.blocks.forEach(bl=>{const s=bl.score();SCORES[bl.key]=s;setText("sc_"+bl.key,s);total+=s;});let fail=false,any=false;for(let i=0;i<4;i++){const v=str("ms_"+i);if(v==="無")fail=true;if(v==="有"||v==="無")any=true;}MIN_FAIL=fail;setHTML("det_ms",fail?'<span class="fail">⚠ 未達最低標準（有項目為「無」）</span>':(any?'<span class="pass">✓ 已確認全部最低標準為「有」</span>':"請確認各項最低標準"));setText("totalVal",total);setHTML("pfVal","");}
@@ -396,7 +409,8 @@ function ensureLoginBtn(){const t=document.querySelector(".top-in");if(t&&!docum
 function goHome(){resetTheme();setBar("",false);ensureLoginBtn();hideBackBtn();
   var tabs=BRANCH_ORDER.map(function(b){var c=BRANCH_COLORS[b.id]||{};return '<button class="btn" style="background:'+c.c+';color:#fff;font-size:18px;padding:30px;min-width:140px" onclick="pickBranch(\''+b.id+'\')">'+(c.dot||"")+"<br>"+b.name+'<br><span style="font-size:11px;opacity:.9">評分表</span></button>';}).join("");
   var previewCard=previewBtnsHidden()?"":'<div class="card" style="text-align:center;background:var(--themeL);border:1px solid #cfe3d0"><button class="btn btn-sec" style="margin:3px" onclick="previewRegion()">👁️ 預覽地域總覽</button> <button class="btn btn-sec" style="margin:3px" onclick="previewDistrict()">👁️ 預覽區總覽</button></div>';
-  show('<div class="card" style="text-align:center"><h2 style="margin:0 0 4px;color:var(--theme)">2026 優異旅團獎勵計劃</h2><p style="color:var(--muted);margin:0 0 14px">港島地域 · 評選期 '+INIT.evalYear+'-01-01 至 '+INIT.evalYear+'-12-31</p><div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px">'+tabs+'</div></div>'+previewCard+'<p style="text-align:center;color:var(--muted);font-size:11px;margin:14px 0 0">Scout System · '+APP_VER+'</p>');}
+  const y=INIT.year||2026, ey=INIT.evalYear||(y-1), eStart=INIT.evalDateStart||(ey+"-01-01"), eEnd=INIT.evalDateEnd||(ey+"-12-31");
+  show('<div class="card" style="text-align:center"><h2 style="margin:0 0 4px;color:var(--theme)">'+y+' 優異旅團獎勵計劃</h2><p style="color:var(--muted);margin:0 0 14px">港島地域 · 評選期 '+eStart+' 至 '+eEnd+'</p><div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px">'+tabs+'</div></div>'+previewCard+'<p style="text-align:center;color:var(--muted);font-size:11px;margin:14px 0 0">Scout System · '+APP_VER+'</p>');}
 
 /* ---- 旅團填寫（揀支部→區→旅團→表格）---- */
 function ensureBackBtn(){var t=document.querySelector(".top-in");if(!t)return;var b=document.getElementById("hdrBack");if(!b){var s=document.createElement("span");s.innerHTML='<button id="hdrBack" class="btn btn-sec" style="padding:6px 12px;font-size:12px" onclick="exitToHome()">← 返回</button>';t.insertBefore(s,t.lastChild);}else{b.style.display="";}}
@@ -521,6 +535,13 @@ function renderRegionDash(){ensureBackBtn();
     });
     hh+='<tr style="background:var(--themeL)"><td><b>合計</b></td>'+bk.map(function(k){return '<td><b>'+tot[k]+'</b></td>';}).join("")+'<td><b>'+list.length+'</b></td></tr>';
     hh+='</tbody></table></div></div>';
+    const yVal=INIT.year||2026, eyVal=INIT.evalYear||(yVal-1), stVal=INIT.evalDateStart||(eyVal+"-01-01"), edVal=INIT.evalDateEnd||(eyVal+"-12-31");
+    hh+='<div class="card"><h4 style="margin:0 0 8px">📅 獎勵計劃年份及評選期設定（地域設定，來年／2028 或以後可持續修改）</h4><div style="display:flex;flex-wrap:wrap;gap:12px">';
+    hh+='<label class="fld" style="min-width:140px"><span>獎勵計劃年份 (如 2026)</span><input type="number" id="cfg_year" value="'+yVal+'"></label>';
+    hh+='<label class="fld" style="min-width:140px"><span>評選年度 (如 2025)</span><input type="number" id="cfg_evalYear" value="'+eyVal+'"></label>';
+    hh+='<label class="fld" style="min-width:160px"><span>評選期開始日期</span><input type="text" id="cfg_evalStart" value="'+esc(stVal)+'" placeholder="YYYY-MM-DD"></label>';
+    hh+='<label class="fld" style="min-width:160px"><span>評選期結束日期</span><input type="text" id="cfg_evalEnd" value="'+esc(edVal)+'" placeholder="YYYY-MM-DD"></label>';
+    hh+='</div><div style="margin-top:10px"><button class="btn btn-pri" onclick="doSaveYearConfig()">儲存年份及評選期</button></div></div>';
     hh+='<div class="card"><h4 style="margin:0 0 8px">各支部合格線（旅團看不到，區看到）</h4><div style="display:flex;flex-wrap:wrap;gap:8px">';
     BRANCH_ORDER.forEach(function(b){const c=BRANCH_COLORS[b.id]||{};hh+='<label class="fld" style="min-width:130px"><span style="color:'+c.c+'">'+(c.dot||"")+" "+b.name+'</span><input type="number" id="pm_'+b.id+'" value="'+(pm[b.id]||80)+'"></label>';});
     hh+='</div><div style="margin-top:10px"><button class="btn btn-pri" onclick="doSavePassMarks()">儲存合格線</button></div></div>';
@@ -534,6 +555,26 @@ function renderRegionDash(){ensureBackBtn();
   show(hh);
 }
 function doSavePassMarks(){const o={};let bad=null;BRANCH_ORDER.forEach(b=>{const el=$("#pm_"+b.id);if(!el){bad="畫面未載入完成，請回到「地域總覽」再試";return;}const v=Number(el.value);if(el.value===""||isNaN(v)){bad=b.name+"合格線請輸入數字";return;}o[b.id]=v;});if(bad){toast(bad);return;}gas("setPassMarks")(session.token,o).then(r=>{if(!r.ok){toast(r.error||"儲存失敗");return;}PASS_MARKS=r.passMarks||o;toast("✓ 合格線已儲存");renderRegionDash();}).catch(e=>toast(e.message));}
+function doSaveYearConfig(){
+  const yEl=$("#cfg_year"), eyEl=$("#cfg_evalYear"), sEl=$("#cfg_evalStart"), eEl=$("#cfg_evalEnd");
+  if(!yEl||!eyEl||!sEl||!eEl){toast("畫面未載入完成");return;}
+  const y=Number(yEl.value), ey=Number(eyEl.value);
+  const st=sEl.value.trim(), ed=eEl.value.trim();
+  if(isNaN(y)||y<2000||y>2100){toast("請輸入有效獎勵計劃年份 (如 2026)");return;}
+  if(isNaN(ey)||ey<2000||ey>2100){toast("請輸入有效評選年度 (如 2025)");return;}
+  if(!st||!ed){toast("請填寫開始及結束日期");return;}
+  const cfg={year:y, evalYear:ey, evalDateStart:st, evalDateEnd:ed};
+  gas("setYearConfig")(session.token, cfg).then(r=>{
+    if(!r||!r.ok){toast((r&&r.error)||"儲存失敗");return;}
+    INIT.year = Number(r.year) || y;
+    INIT.evalYear = Number(r.evalYear) || ey;
+    INIT.evalDateStart = String(r.evalDateStart || st);
+    INIT.evalDateEnd = String(r.evalDateEnd || ed);
+    applyYearUI();
+    toast("✓ 年份及評選期設定已儲存");
+    renderRegionDash();
+  }).catch(e=>toast(e&&e.message?e.message:String(e)));
+}
 
 /* ---- 帳號管理 ---- */
 /* ---- 更改自己密碼（審核員／區總監／地域可用；隱藏超管唔支援） ---- */
@@ -574,7 +615,7 @@ function saveAcc(u){const f={};const em=($("#em_"+u)||{}).value;if(em!==undefine
 function delAcc(u){if(!confirm("刪除帳號 "+u+"？"))return;gas("deleteAccount")(session.token,u).then(r=>{toast(r.ok?"已刪除":r.error);if(r.ok)renderAccounts();}).catch(e=>toast(e.message));}
 
 /* ---- 列印統計 ---- */
-function _statsHTML(title,list,pm,ov){let h='<h2>'+title+'</h2><p>港島地域 · '+INIT.year+' 優異旅團 · 生成：'+new Date().toLocaleString("zh-HK")+'</p>';if(ov){h+='<table class="dt"><thead><tr><th>區別</th><th>紀錄</th><th>待批</th><th>已審核</th><th>已送地域</th></tr></thead><tbody>';ov.forEach(o=>{const s=o.stats||{};h+='<tr><td>'+esc(o.district)+'</td><td>'+s.total+'</td><td>'+s.submitted+'</td><td>'+s.reviewed+'</td><td>'+s.confirmed+'</td></tr>';});h+='</tbody></table>';}if(list){h+='<table class="dt"><thead><tr><th>區</th><th>旅團</th><th>支部</th><th>總分</th><th>合格線</th><th>合格</th><th>狀態</th></tr></thead><tbody>';list.forEach(x=>{const line=(pm||{})[x.branchId]||0;h+='<tr><td>'+esc(x.district)+'</td><td>'+esc(x.groupNo)+'</td><td>'+esc(x.branchName)+'</td><td>'+x.total+'</td><td>'+line+'</td><td>'+(Number(x.total)>=line?"合格":"未達線")+'</td><td>'+esc(x.status)+'</td></tr>';});h+='</tbody></table>';}return h;}
+function _statsHTML(title,list,pm,ov){const y=INIT.year||2026;let h='<h2>'+title+'</h2><p>港島地域 · '+y+' 優異旅團 · 生成：'+new Date().toLocaleString("zh-HK")+'</p>';if(ov){h+='<table class="dt"><thead><tr><th>區別</th><th>紀錄</th><th>待批</th><th>已審核</th><th>已送地域</th></tr></thead><tbody>';ov.forEach(o=>{const s=o.stats||{};h+='<tr><td>'+esc(o.district)+'</td><td>'+s.total+'</td><td>'+s.submitted+'</td><td>'+s.reviewed+'</td><td>'+s.confirmed+'</td></tr>';});h+='</tbody></table>';}if(list){h+='<table class="dt"><thead><tr><th>區</th><th>旅團</th><th>支部</th><th>總分</th><th>合格線</th><th>合格</th><th>狀態</th></tr></thead><tbody>';list.forEach(x=>{const line=(pm||{})[x.branchId]||0;h+='<tr><td>'+esc(x.district)+'</td><td>'+esc(x.groupNo)+'</td><td>'+esc(x.branchName)+'</td><td>'+x.total+'</td><td>'+line+'</td><td>'+(Number(x.total)>=line?"合格":"未達線")+'</td><td>'+esc(x.status)+'</td></tr>';});h+='</tbody></table>';}return h;}
 function printRegionStats(){
   var pm=PASS_MARKS,ov=OVERVIEW;
   var allDist=INIT.districts||[];
@@ -605,12 +646,22 @@ function printDistrictStats(){
   html+='</tbody></table><p style="text-align:center;color:#999;font-size:11px;margin-top:20px">Scout System</p></div>';
   show(html);setBar('<button class="btn btn-sec" onclick="goDash()">← 返回</button><button class="btn btn-pri" onclick="window.print()">🖨️ 列印</button>',false);ensureBackBtn();
 }
-var previewMode=false,FIELDS_SRC=null;var APP_VER="v43";var BACKEND_URL="/api/gas";
+const DEFAULT_GAS_URL="https://script.google.com/macros/s/AKfycbyOXyISIolfDFMcX7s1LnqsHdVA99J-4Fti1lv7KcpCrx6DaJi-LKZHxRtKiba39Jsd/exec";
+function getBackendUrl(){
+  if(typeof location!=="undefined"&&(location.hostname.includes("google.com")||location.hostname.includes("googleusercontent.com"))){
+    return ""; // 喺 GAS 部署頁面內打開，直接使用 google.script.run
+  }
+  if(typeof location!=="undefined"&&(location.hostname.includes("github.io")||location.protocol==="file:")){
+    return DEFAULT_GAS_URL;
+  }
+  return "/api/gas";
+}
+var previewMode=false,FIELDS_SRC=null;var APP_VER="v44";var BACKEND_URL=getBackendUrl();
 /* xlsx / exceljs 只喺匯出 Excel 嗰陣先按需載入，令 App 一開就快好多 */
 var XLSX_URL="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
 var EXCELJS_URL="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
 function loadScript(src){return new Promise(function(res,rej){if(document.querySelector('script[src="'+src+'"]')){res();return;}var s=document.createElement("script");s.src=src;s.onload=function(){res();};s.onerror=function(){rej(new Error("無法載入："+src));};document.head.appendChild(s);});}
-var MOCK={submissions:[],sessions:{},accounts:null,passMarks:null};
+var MOCK={submissions:[],sessions:{},accounts:null,passMarks:null,year:2026,evalYear:2025,evalDateStart:"2025-01-01",evalDateEnd:"2025-12-31"};
 function mockSave(){try{localStorage.setItem("dga_mock",JSON.stringify(MOCK));}catch(e){}}
 function mockLoad(){try{const s=JSON.parse(localStorage.getItem("dga_mock")||"null");if(s)MOCK=s;}catch(e){}if(!MOCK.submissions)MOCK.submissions=[];if(!MOCK.sessions)MOCK.sessions={};}
 function DIST_LIST(){const a=[];GROUPS_DATA.forEach(g=>{if(a.indexOf(g.d)<0)a.push(g.d);});return a;}
@@ -618,14 +669,26 @@ function summaryFromScores(b,sc){const bn=BRANCHES.find(x=>x.id===b);const L=[];
 function computeScores(b,f){const bn=BRANCHES.find(x=>x.id===b);if(!bn)return{scores:{},total:0,passFail:"pass"};const prev=currentBranch;currentBranch=bn;FIELDS_SRC=f;const sc={};let t=0;bn.blocks.forEach(bl=>{const s=bl.score();sc[bl.key]=s;t+=s;});let fail=false;for(let i=0;i<4;i++)if(f["ms_"+i]==="無")fail=true;FIELDS_SRC=null;currentBranch=prev;return{scores:sc,total:t,passFail:fail?"fail":"pass"};}
 function _seedAccounts(){const A=[["HKIR","1234","region",""]];const codes={CHW:"柴灣區",SKW:"筲箕灣區",HKN:"港島北區",WCH:"灣仔區",VIC:"維多利亞城區",HKW:"港島西區",HKS:"港島南區"};Object.keys(codes).forEach(c=>{A.push([c,"1234","reviewer",codes[c]]);A.push([c+"DC","1234","dc",codes[c]]);});return A.map(r=>({username:r[0],password:r[1],role:r[2],district:r[3],email:""}));}
 function mockFields(b,g,seed){let st=seed||1;const rnd=()=>{st=(st*9301+49297)%233280;return st/233280;};const ri=(a,b)=>Math.floor(rnd()*(b-a+1))+a;const bn=BRANCHES.find(x=>x.id===b);const f={h_type:(bn&&bn.typeOpts&&bn.typeOpts[0])||"",h_leader:"領袖"+ri(1,99),h_phone:"5555 "+ri(1000,9999),h_position:(bn&&bn.positions&&bn.positions[2])||"",h_meetingPlace:g.sponsor,h_meetingTime:"逢星期六 14:00"};f.members_mBoy=ri(6,22);f.members_mGirl=ri(4,18);f.members_lBoy=ri(1,3);f.members_lGirl=ri(0,3);f.members_appoint=ri(1,3);f.members_temp=ri(0,2);f.members_wood=ri(0,2);f.progress_0=ri(0,8);f.progress_1=ri(0,6);f.progress_2=ri(0,4);f.progress_3=ri(0,3);f.topaward_0=ri(0,3);f.topaward_1=ri(0,2);for(let i=0;i<11;i++)f["admin_a"+i]=(rnd()>0.35?"有":"");f.meeting_n=ri(4,14);f.ms_0="有";f.ms_1="有";f.ms_2="有";f.ms_3="有";f.act1_0_date="2025-0"+ri(1,9)+"-1"+ri(0,9);f.act1_0_cat="會員大會";f.act2_0_date="2025-0"+ri(3,9)+"-1"+ri(0,9);f.act2_0_cat="活動";f.act3_0_date="2025-0"+ri(4,9)+"-2"+ri(0,8);f.act3_0_cat="活動";f.service_0_date="2025-0"+ri(5,9)+"-1"+ri(0,9);f.service_0_cat="社區服務";f.comp_0_name="區比賽";f.comp_0_cat="區比賽";return f;}
-function seedMock(){MOCK.submissions=[];MOCK.sessions={};MOCK.accounts=_seedAccounts();MOCK.passMarks={grasshopper:80,cub:80,scout:80,venture:80,rover:80};const byD={};GROUPS_DATA.forEach(g=>{(byD[g.d]=byD[g.d]||[]).push(g);});const brs=["grasshopper","cub","scout","venture","rover"];let n=0;DIST_LIST().forEach((d,di)=>{const gs=byD[d]||[];const cnt=2+(di%2);for(let k=0;k<cnt&&k<gs.length;k++){const g=gs[k%gs.length];const secs=g.sections&&g.sections.length?g.sections:brs;const bid=SECTION_TO_BRANCH[secs[k%secs.length]]||brs[(di+k)%5];const f=mockFields(bid,g,di*131+k*7+101);const cs=computeScores(bid,f);const bn=BRANCHES.find(x=>x.id===bid);const st=(n%5===0)?"已遞交":((n%3===0)?"已確認":"已審核");const sub="2025-0"+(1+(n%8))+"-1"+(n%9)+" 10:00";MOCK.submissions.push({id:"M"+(1000+n),createdAt:sub,submittedAt:sub,year:2026,district:d,groupNo:g.no,branchId:bid,branchName:bn.name,leader:f.h_leader,phone:f.h_phone,fields:f,scores:cs.scores,total:cs.total,minStd:cs.passFail,status:st,reviewedAt:st!=="已遞交"?sub:"",reviewedBy:st!=="已遞交"?(d.slice(0,2)+"-審核員"):"",confirmedAt:st==="已確認"?sub:"",confirmedBy:st==="已確認"?(d.slice(0,2)+"-區總監"):"",summary:summaryFromScores(bid,cs.scores)});n++;}});mockSave();}
-function mockReset(){if(!confirm("重置示範數據？"))return;MOCK={submissions:[],sessions:{},accounts:null,passMarks:null};seedMock();toast("已重置");goHome();}
+function seedMock(){MOCK.submissions=[];MOCK.sessions={};MOCK.accounts=_seedAccounts();MOCK.passMarks={grasshopper:80,cub:80,scout:80,venture:80,rover:80};const byD={};GROUPS_DATA.forEach(g=>{(byD[g.d]=byD[g.d]||[]).push(g);});const brs=["grasshopper","cub","scout","venture","rover"];let n=0;DIST_LIST().forEach((d,di)=>{const gs=byD[d]||[];const cnt=2+(di%2);for(let k=0;k<cnt&&k<gs.length;k++){const g=gs[k%gs.length];const secs=g.sections&&g.sections.length?g.sections:brs;const bid=SECTION_TO_BRANCH[secs[k%secs.length]]||brs[(di+k)%5];const f=mockFields(bid,g,di*131+k*7+101);const cs=computeScores(bid,f);const bn=BRANCHES.find(x=>x.id===bid);const st=(n%5===0)?"已遞交":((n%3===0)?"已確認":"已審核");const sub="2025-0"+(1+(n%8))+"-1"+(n%9)+" 10:00";MOCK.submissions.push({id:"M"+(1000+n),createdAt:sub,submittedAt:sub,year:MOCK.year||2026,district:d,groupNo:g.no,branchId:bid,branchName:bn.name,leader:f.h_leader,phone:f.h_phone,fields:f,scores:cs.scores,total:cs.total,minStd:cs.passFail,status:st,reviewedAt:st!=="已遞交"?sub:"",reviewedBy:st!=="已遞交"?(d.slice(0,2)+"-審核員"):"",confirmedAt:st==="已確認"?sub:"",confirmedBy:st==="已確認"?(d.slice(0,2)+"-區總監"):"",summary:summaryFromScores(bid,cs.scores)});n++;}});mockSave();}
+function mockReset(){if(!confirm("重置示範數據？"))return;MOCK={submissions:[],sessions:{},accounts:null,passMarks:null,year:2026,evalYear:2025,evalDateStart:"2025-01-01",evalDateEnd:"2025-12-31"};seedMock();toast("已重置");goHome();}
 function mockEnter(){previewMode=true;mockLoad();if(!MOCK.submissions||!MOCK.submissions.length)seedMock();goHome();}
 function mockSeedAndRegion(){previewMode=true;mockLoad();if(!MOCK.submissions||!MOCK.submissions.length)seedMock();session={token:"MTOK_R",role:"region",district:"",username:"HKIR"};goDash();}
 const MOCK_API={
-  getInit(){return{ok:true,year:2026,evalYear:2025,districts:Object.keys({CHW:"柴灣區",SKW:"筲箕灣區",HKN:"港島北區",WCH:"灣仔區",VIC:"維多利亞城區",HKW:"港島西區",HKS:"港島南區"}).map(k=>({CHW:"柴灣區",SKW:"筲箕灣區",HKN:"港島北區",WCH:"灣仔區",VIC:"維多利亞城區",HKW:"港島西區",HKS:"港島南區"})[k]),distCodes:{CHW:"柴灣區",SKW:"筲箕灣區",HKN:"港島北區",WCH:"灣仔區",VIC:"維多利亞城區",HKW:"港島西區",HKS:"港島南區"}};},
+  getInit(){
+    const y=Number(MOCK.year)||2026, ey=Number(MOCK.evalYear)||(y-1);
+    const st=MOCK.evalDateStart||(ey+"-01-01"), ed=MOCK.evalDateEnd||(ey+"-12-31");
+    return{ok:true,year:y,evalYear:ey,evalDateStart:st,evalDateEnd:ed,districts:Object.keys({CHW:"柴灣區",SKW:"筲箕灣區",HKN:"港島北區",WCH:"灣仔區",VIC:"維多利亞城區",HKW:"港島西區",HKS:"港島南區"}).map(k=>({CHW:"柴灣區",SKW:"筲箕灣區",HKN:"港島北區",WCH:"灣仔區",VIC:"維多利亞城區",HKW:"港島西區",HKS:"港島南區"})[k]),distCodes:{CHW:"柴灣區",SKW:"筲箕灣區",HKN:"港島北區",WCH:"灣仔區",VIC:"維多利亞城區",HKW:"港島西區",HKS:"港島南區"}};
+  },
+  setYearConfig(token,cfg){
+    const s=MOCK.sessions[token];if(!s||(s.role!=="region"&&s.role!=="superadmin"))return{ok:false,error:"只限地域／超管"};
+    const y=Number(cfg.year)||2026, ey=Number(cfg.evalYear)||(y-1);
+    const st=cfg.evalDateStart||(ey+"-01-01"), ed=cfg.evalDateEnd||(ey+"-12-31");
+    MOCK.year=y; MOCK.evalYear=ey; MOCK.evalDateStart=st; MOCK.evalDateEnd=ed;
+    mockSave();
+    return{ok:true,year:y,evalYear:ey,evalDateStart:st,evalDateEnd:ed};
+  },
   getGroups(d){return GROUPS_DATA.filter(g=>g.d===d).map(g=>({no:g.no,sponsor:g.sponsor,sections:g.sections}));},
-  submitForm(p){const id="M"+Date.now();const now=new Date().toISOString();MOCK.submissions.push(Object.assign({id,createdAt:now,submittedAt:now,year:2026,status:"已遞交",reviewedAt:"",reviewedBy:"",confirmedAt:"",confirmedBy:""},p));mockSave();return{ok:true,id};},
+  submitForm(p){const id="M"+Date.now();const now=new Date().toISOString();MOCK.submissions.push(Object.assign({id,createdAt:now,submittedAt:now,year:MOCK.year||2026,status:"已遞交",reviewedAt:"",reviewedBy:"",confirmedAt:"",confirmedBy:""},p));mockSave();return{ok:true,id};},
   login(u,pw){if(u==="sheep"&&pw==="0728"){MOCK.sessions["MS"]={username:"sheep",role:"superadmin",district:""};return{ok:true,token:"MS",username:"sheep",role:"superadmin",district:""};}const a=(MOCK.accounts||_seedAccounts()).find(x=>x.username===u);if(!a||a.password!==pw)return{ok:false,error:"帳號或密碼不正確"};const t="MTOK_"+u;MOCK.sessions[t]={username:u,role:a.role,district:a.district};return{ok:true,token:t,username:u,role:a.role,district:a.district,email:a.email};},
   listForDistrict(token){const s=MOCK.sessions[token];if(!s)return{ok:false,error:"登入已失效"};if(s.role==="region"||s.role==="superadmin")return{ok:false,error:"請用地域總覽"};const out=MOCK.submissions.filter(x=>x.district===s.district).map(x=>Object.assign({},x,{fields:x.fields,scores:x.scores}));return{ok:true,role:s.role,district:s.district,username:s.username,submissions:out,passMarks:MOCK.passMarks};},
   reviewApprove(token,id,sigName,sigPos){const s=MOCK.sessions[token];if(!sigName||!sigPos)return{ok:false,error:"請先填寫評審員姓名及職位"};const r=MOCK.submissions.find(x=>x.id===id);if(r&&r.status==="已遞交"){r.status="已審核";r.reviewedAt=new Date().toISOString();r.reviewedBy=sigName;}mockSave();return{ok:true};},

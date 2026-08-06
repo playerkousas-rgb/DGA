@@ -6,22 +6,24 @@ const DEFAULT_GAS_URL =
 
 const TIMEOUT_MS = 50000;
 
-// GAS 網頁應用 POST 之後會 302 去一個驗證網址。
-// 如果交畀 fetch 自動跟（redirect:"follow"），按規格 301/302 會將 POST 轉做 GET，
-// 打到 doGet 就會回 HTML（「連唔到後端」嘅真兇之一）。
-// 所以呢度用 redirect:"manual" 自己跟 3xx，並且保留 POST 方法，必要時一併帶埋 Set-Cookie。
+// GAS 網頁應用 POST 之後會 302 去一個驗證網址（script.googleusercontent.com/macros/echo）。
+// 該跳轉目標必須使用 GET 方法訪問（按 HTTP 規範及 GAS 沙盒安全設計）。
+// 之前 v43 錯誤地用 redirect:"manual" 並在跳轉後繼續以 POST 打目標網址，導致 GAS 報錯。
 function isRedirect(status) {
   return status === 301 || status === 302 || status === 303 || status === 307 || status === 308;
 }
 
-async function callGas(url, body, cookie, depth) {
+async function callGas(url, body, cookie, depth, method = "POST") {
   if (depth < 0) throw new Error("GAS 後端跳轉次數過多");
-  const headers = { "Content-Type": "text/plain;charset=utf-8" };
+  const headers = {};
+  if (method === "POST") {
+    headers["Content-Type"] = "text/plain;charset=utf-8";
+  }
   if (cookie) headers["Cookie"] = cookie;
   const r = await fetch(url, {
-    method: "POST",
+    method,
     headers,
-    body,
+    body: method === "POST" ? body : undefined,
     redirect: "manual",
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
@@ -29,7 +31,8 @@ async function callGas(url, body, cookie, depth) {
     const loc = r.headers.get("location");
     const sc = r.headers.get("set-cookie");
     if (!loc) throw new Error("GAS 後端回傳跳轉但無 Location");
-    return callGas(loc, body, sc || cookie, depth - 1);
+    // GAS 302 跳轉目的地須用 GET 讀取 JSON 結果
+    return callGas(loc, null, sc || cookie, depth - 1, "GET");
   }
   return r;
 }
@@ -45,7 +48,7 @@ module.exports = async function handler(req, res) {
   const body = typeof req.body === "string" ? req.body : JSON.stringify(req.body || {});
 
   try {
-    const upstream = await callGas(gasUrl, body, "", 4);
+    const upstream = await callGas(gasUrl, body, "", 4, "POST");
     const text = (await upstream.text()) || "";
 
     // GAS 正常會回 JSON；如果回咗 HTML（例如部署權限未開放「任何人」／未初始化／網址過期），
@@ -70,7 +73,7 @@ module.exports = async function handler(req, res) {
   } catch (error) {
     console.error("GAS proxy error", error);
     res.setHeader("Content-Type", "application/json; charset=utf-8");
-    return res.status(502).json({ ok: false, error: "後端暫時未能連線，請稍後再試" });
+    return res.status(502).json({ ok: false, error: "後端暫時未能連線，請稍後再試 (" + String(error.message || error) + ")" });
   }
 };
 
