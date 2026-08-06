@@ -1,7 +1,6 @@
 <!DOCTYPE html><html lang="zh-HK"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>2026 優異旅團評分系統</title>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<!-- xlsx / exceljs 改為「用嗰陣先載入」（見 loadScript），避免一開 App 就郁住兩個幾 MB 嘅 library 而變慢 -->
 <style>
 :root{--green:#1b5e20;--green2:#2e7d32;--greenL:#e8f5e9;--theme:#1b5e20;--theme2:#2e7d32;--themeL:#e8f5e9;--gold:#c8a24a;--ink:#1f2d27;--muted:#5f6b65;--line:#d7e0d8;--bg:#f4f7f4;--red:#c0392b;--amber:#b9770e}
 *{box-sizing:border-box}body{margin:0;font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:15px;line-height:1.5}
@@ -64,8 +63,8 @@ footer.bar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#fff;bor
 @media print{#app{display:block!important}table{font-size:11px}th{background:#333!important;color:#fff!important;-webkit-print-color-adjust:exact}td,th{border:1px solid #999!important;padding:3px 5px}header.top,footer.bar,.bar-btns,.btn,.steps{display:none!important}body{background:#fff}}
 @media(max-width:600px){.top-in h1{font-size:14px}.total-box .val{font-size:20px}.btn{padding:9px 11px;font-size:12px}}
 </style></head><body>
-<header class="top"><div class="top-in"><h1>🏕️ 2026 優異旅團評分系統</h1><span class="sub" id="topSub">港島地域</span><span id="verBadge" style="background:#fff;color:#1b5e20;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800;margin-left:6px">v42</span></div></header>
-<main><div id="app"></div></main>
+<header class="top"><div class="top-in"><h1>🏕️ 2026 優異旅團評分系統</h1><span class="sub" id="topSub">港島地域</span><span id="verBadge" style="background:#fff;color:#1b5e20;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800;margin-left:6px">v43</span></div></header>
+<main><div id="app"><div class="card" style="text-align:center;padding:34px"><span class="spin"></span><p style="color:var(--muted);margin-top:12px">載入中… 連接後端</p></div></div></main>
 <footer class="bar" id="formBar" style="display:none"><div class="bar-in"><div class="total-box"><span class="lbl">總分</span><span class="val" id="totalVal">0</span><span class="pf" id="pfVal">—</span></div><div class="bar-btns" id="barBtns"></div></div></footer>
 <div id="toast" class="toast" style="display:none"></div>
 
@@ -83,7 +82,13 @@ function gas(fn){return function(){var args=[].slice.call(arguments);return new 
   }
   if(BACKEND_URL){
     fetch(BACKEND_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},redirect:"follow",body:JSON.stringify({action:fn,args:args})})
-      .then(function(r){return r.json();}).then(function(o){res(o);}).catch(function(e){rej(e);});
+      .then(function(r){
+        return r.text().then(function(t){
+          var o;try{o=JSON.parse(t);}catch(e){throw new Error("後端回傳咗非 JSON（可能 GAS 部署未開放「任何人」或網址過期）："+t.slice(0,160));}
+          return o;
+        });
+      })
+      .then(function(o){res(o);}).catch(function(e){rej(e);});
     return;
   }
   rej(new Error("偵測不到 google.script.run，亦冇設定 BACKEND_URL"));
@@ -411,7 +416,7 @@ function showGroup(){ensureBackBtn();setBar('<button class="btn btn-sec" onclick
 function grpGroup(){const i=$("#g_group").value;if(i===""){toast("請選旅團");return;}const g=ctx._groups[parseInt(i,10)];ctx.groupNo=g.no;ctx.sponsor=g.sponsor;renderForm(ctx.branchId);setBar('<button class="btn btn-sec" onclick="showGroup()">← 返回</button><button class="btn btn-sec" onclick="groupDownload()">⬇️Excel</button><button class="btn btn-pri" onclick="groupSubmit()">✅ 確認送出</button>',true);}
 function groupPayload(){recompute();const f=collectFields();return{district:f.h_district||"",groupNo:(f.h_groupNo||"").trim(),branchId:currentBranch.id,branchName:currentBranch.name,type:f.h_type||"",leader:f.h_leader||"",phone:f.h_phone||"",position:f.h_position||"",meetingPlace:f.h_meetingPlace||"",meetingTime:f.h_meetingTime||"",fields:f,scores:Object.assign({},SCORES),total:totalFromScores(),passFail:MIN_FAIL?"fail":"pass",summary:buildSummary()};}
 function groupSubmit(){if(!confirm("確認送出「"+ctx.groupNo+"（"+currentBranch.name+"）」？總分："+totalFromScores()))return;setBar('<span class="spin"></span> 送出…',false);gas("submitForm")(groupPayload()).then(r=>{if(r.ok){toast("✓ 已送出！編號 "+r.id);setTimeout(goHome,1500);}else toast("失敗");}).catch(e=>toast("失敗："+e.message));}
-function groupDownload(){recompute();const b=currentBranch;const A=[[INIT.year+" 優異旅團 — "+b.name+" 評分表"],["旅號："+ctx.groupNo+"　區別："+ctx.district],["最低標準",MIN_FAIL?"未達":"符合"],["總分",totalFromScores()],[]];currentBranch.blocks.forEach(bl=>{A.push([bl.title(),"得分："+(SCORES[bl.key]||0)]);(bl.data()||[]).forEach(r=>A.push(r));A.push([]);});const fn=(INIT.year+"_DGA_"+b.id+"_"+ctx.groupNo).replace(/[\\/:*?"<>|]/g,"_");if(typeof XLSX!=="undefined"){try{const ws=XLSX.utils.aoa_to_sheet(A);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,b.unit);XLSX.writeFile(wb,fn+".xlsx");return;}catch(e){}}toast("Excel 下載已開始");}
+function groupDownload(){recompute();const b=currentBranch;const A=[[INIT.year+" 優異旅團 — "+b.name+" 評分表"],["旅號："+ctx.groupNo+"　區別："+ctx.district],["最低標準",MIN_FAIL?"未達":"符合"],["總分",totalFromScores()],[]];currentBranch.blocks.forEach(bl=>{A.push([bl.title(),"得分："+(SCORES[bl.key]||0)]);(bl.data()||[]).forEach(r=>A.push(r));A.push([]);});const fn=(INIT.year+"_DGA_"+b.id+"_"+ctx.groupNo).replace(/[\\/:*?"<>|]/g,"_");const doWrite=function(){try{const ws=XLSX.utils.aoa_to_sheet(A);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,b.unit);XLSX.writeFile(wb,fn+".xlsx");}catch(e){toast("Excel 下載失敗："+e.message);}};if(typeof XLSX!=="undefined"){doWrite();return;}setBar('<span class="spin"></span> 載入 Excel 元件…',false);loadScript(XLSX_URL).then(function(){doWrite();if(session)goDash();}).catch(function(e){toast(e.message);if(session)goDash();});}
 
 /* ---- 登入（區／地域）---- */
 var loginMode="district";
@@ -453,9 +458,11 @@ function doConfirm(id){viewSub(id);}
 /* ---- 檢視／列印旅團表單 ---- */
 function downloadOriginalExcel(){
   /* 所有完成／失敗路徑最後都 goDash()，確保底部操作列（← 返回等）一定恢復 */
-  if(typeof ExcelJS==='undefined'){toast('ExcelJS未載入，用APP格式');groupDownload();goDash();return;}
-  setBar('<span class="spin"></span> 產生原版Excel…',false);
-  var branchId=currentBranch.id;
+  setBar('<span class="spin"></span> 載入 Excel 元件…',false);
+  loadScript(EXCELJS_URL).then(function(){
+    if(typeof ExcelJS==='undefined'){toast('ExcelJS未載入，用APP格式');groupDownload();goDash();return;}
+    setBar('<span class="spin"></span> 產生原版Excel…',false);
+    var branchId=currentBranch.id;
   gas('getTemplateB64')(branchId).then(function(tplB64){
     if(!tplB64){toast('模板不存在，改用APP格式');groupDownload();goDash();return;}
     var binary=atob(tplB64);var bytes=new Uint8Array(binary.length);
@@ -480,6 +487,7 @@ function downloadOriginalExcel(){
       });
     }).catch(function(e){toast('ExcelJS讀取失敗：'+e.message);groupDownload();goDash();});
   }).catch(function(e){toast('取模板失敗：'+e.message);groupDownload();goDash();});
+  }).catch(function(e){toast('ExcelJS載入失敗：'+e.message);groupDownload();goDash();});
 }
 function goBackToDash(){if(session.role==="region"||session.role==="superadmin"){if(regionTab!==undefined)renderRegionDash();else refreshRegion();}else{if(currentDashR)renderDistrictDash(currentDashR);else refreshDistrict();}}
 function viewSub(id){ensureBackBtn();const r=submissionsCache.find(x=>x.id===id);if(!r){toast("找不到");return;}editId=id;ctx={district:r.district,groupNo:r.groupNo,sponsor:"",branchId:r.branchId};renderForm(r.branchId,r.fields,false);const canRev=(r.status==="已遞交"&&(session.role==="reviewer"||session.role==="dc"||session.role==="region"||session.role==="superadmin"));const canConf=(r.status==="已審核"&&(session.role==="dc"||session.role==="region"||session.role==="superadmin"));let bar='<button class="btn btn-sec" onclick="goDash()">← 返回</button><button class="btn btn-sec" onclick="downloadOriginalExcel()">⬇️ Excel原版</button><button class="btn btn-pri" onclick="window.print()">🖨️ APP版列印</button>';if(canRev)bar+='<button class="btn btn-pri" id="reviewBtn" onclick="doReviewFromView()" disabled>✅ 審核員批核</button>';if(canConf)bar+='<button class="btn btn-pri" onclick="doConfirmFromView()">📤 確認送地域</button>';setBar(bar,true);if(canRev){["sig_ev_name","sig_ev_pos"].forEach(function(n){const el=document.querySelector('[name="'+n+'"]');if(el)el.addEventListener("input",updateReviewBtn);});updateReviewBtn();}}
@@ -598,6 +606,10 @@ function printDistrictStats(){
   show(html);setBar('<button class="btn btn-sec" onclick="goDash()">← 返回</button><button class="btn btn-pri" onclick="window.print()">🖨️ 列印</button>',false);ensureBackBtn();
 }
 var previewMode=false,FIELDS_SRC=null;var APP_VER="v43";var BACKEND_URL="/api/gas";
+/* xlsx / exceljs 只喺匯出 Excel 嗰陣先按需載入，令 App 一開就快好多 */
+var XLSX_URL="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
+var EXCELJS_URL="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
+function loadScript(src){return new Promise(function(res,rej){if(document.querySelector('script[src="'+src+'"]')){res();return;}var s=document.createElement("script");s.src=src;s.onload=function(){res();};s.onerror=function(){rej(new Error("無法載入："+src));};document.head.appendChild(s);});}
 var MOCK={submissions:[],sessions:{},accounts:null,passMarks:null};
 function mockSave(){try{localStorage.setItem("dga_mock",JSON.stringify(MOCK));}catch(e){}}
 function mockLoad(){try{const s=JSON.parse(localStorage.getItem("dga_mock")||"null");if(s)MOCK=s;}catch(e){}if(!MOCK.submissions)MOCK.submissions=[];if(!MOCK.sessions)MOCK.sessions={};}
@@ -666,9 +678,14 @@ function showBootError(msg){
 }
 function boot(){
   var vb=document.getElementById("verBadge");if(vb)vb.textContent=APP_VER;
+  // 一開就顯示「載入中」，令用家知個 App 未死（之前成日以為死咗）
+  show('<div class="card" style="text-align:center;padding:34px"><span class="spin"></span><p style="color:var(--muted);margin-top:12px">載入中… 連接後端</p></div>');
   // GAS 沙盒：等 google.script.run（最多 8s）；外部 HTML 設咗 BACKEND_URL 就快啲放棄（2.5s）改用 fetch
   waitForGas(BACKEND_URL?25:80).then(function(){
-    gas("getInit")().then(function(init){Object.assign(INIT,init);$("#topSub").textContent="Scout System";goHome();})
+    gas("getInit")().then(function(init){
+      if(!init||init.ok===false){throw new Error((init&&init.error)||"後端回傳異常");}
+      Object.assign(INIT,init);$("#topSub").textContent="Scout System";goHome();
+    })
       .catch(function(e){showBootError(e&&e.message?e.message:String(e));});
   });
 }
