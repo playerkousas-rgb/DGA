@@ -1,4 +1,4 @@
-# 🚀 部署指南（單檔版 · v43 · 一個 Code.gs 搞掂）
+# 🚀 部署指南（單檔版 · v44 · 一個 Code.gs 搞掂）
 
 ## 部署 GAS（約 5 分鐘）
 1. [Google Sheets](https://sheets.google.com) 新增試算表 → **擴充功能 → Apps Script**。
@@ -13,8 +13,9 @@
 5. **開嗰個 `/exec` URL** → 系統會**自動初始化**（建表 + 帳號 + 合格線）。
 6. login：`HKIR / 1234`（地域）、`CHW / 1234`（區）、`CHWDC / 1234`（區總監）、隱藏超管。
 
-> ✅ v43：新增「🔑 更改密碼」（審核員／區總監／地域自行改密碼，驗證舊密碼；隱藏超管密碼寫死喺 Code.gs，唔支援改密碼）；修復審核員批核／區總監確認必定失敗（bad column passFail）嘅嚴重 BUG；修復下載 Excel 後返回功能消失；合格線改為一次過批量儲存並正確顯示錯誤；修復跨支部計分互相污染。
-> ✅ v42 起徹底解決「填表後登入崩潰（Null 異常）」及 GAS RPC Date 物件序列化問題，並於開網址時自動完成初始化（唔使手動 run setup()）。
+> ✅ v44：新增「系統年份及評選期設定」——地域管理員（HKIR / 超管）登入後可於總覽直接設定獎勵計劃年份（如 2026、2027、2028）、評選年度及評選期開始/結束日期，資料儲存於 Sheet 的 Config 工作表，來年或將來無需重寫代碼即可持續使用；同時修復「升級 v43 後開唔到」問題（修正 `api/gas.js` 在 GAS 302 跳轉時改以 GET 讀取結果，以及前端在不同託管環境嘅連接邏輯與備用重試機制）。
+> ✅ v43：新增「🔑 更改密碼」；修復審核員批核／區總監確認必定失敗（bad column passFail）嘅嚴重 BUG；修復下載 Excel 後返回功能消失；合格線改為批量儲存。
+> ✅ v42 起徹底解決「填表後登入崩潰（Null 異常）」及 GAS RPC Date 物件序列化問題。
 > （想提前拎試算表網址：喺編輯器 run 一次 `setup()`，都係安全嘅，幂等唔會洗資料。）
 
 ## 之後改 code
@@ -24,8 +25,8 @@
 ## index.html（Git／自訂網域用：不再突登轉向）
 `index.html` 現已升級為**完整單頁前端（SPA）**，不再跳轉去 GAS `/exec` URL！
 - 放上 GitHub Pages／Vercel → 畀人一個靚網址，打開**不會再跳走去 `script.google.com`**（不再出現 Google 黃藍警告條），直接喺靚網址中使用。
-- 前端會自動透過 `fetch POST` 後台連接 `BACKEND_URL`（GAS 後端）。
-- 如將來改咗 GAS 部署 URL（新建部署），只需更新 `index.html` 入面嘅 `BACKEND_URL` 變數，或喺 Vercel 設定環境變數 `GAS_BACKEND_URL` 即可。
+- 前端會自動透過 `fetch POST` 後台連接 `BACKEND_URL`（GAS 後端或 Vercel 無伺服器代理）。
+- 如將來改咗 GAS 部署 URL（新建部署），只需更新 `index.html` 入面嘅 `DEFAULT_GAS_URL` 變數，或喺 Vercel 設定環境變數 `GAS_BACKEND_URL` 即可。
 
 ## 帳號一覽（密碼皆 `1234`）
 - 地域：`HKIR`
@@ -37,4 +38,4 @@
 刪掉試算表（Drive 入面「DGA2026_優異旅團評分系統」），下次開網址自動重建。
 
 ---
-Scout System · v43 · COPYRIGHT 2026
+Scout System · v44 · COPYRIGHT 2026-2028
