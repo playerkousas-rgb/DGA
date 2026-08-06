@@ -404,42 +404,108 @@ function buildSummary(){const L=[];currentBranch.blocks.forEach(bl=>{L.push(bl.t
 /* ============ 畫面：首頁 ============ */
 /* ============ v5：首頁（5 支部分頁）＋登入＋總覽＋帳號管理＋打印 ============ */
 var PASS_MARKS={},OVERVIEW=[],ACCOUNTS=[],ME={},regionTab="",districtTab="",currentDashR=null;
-function ensureLoginBtn(){const t=document.querySelector(".top-in");if(t&&!document.getElementById("hdrLogin")){const s=document.createElement("span");s.style.marginLeft="auto";s.innerHTML='<button id="hdrLogin" class="btn btn-sec" style="padding:6px 12px;font-size:12px" onclick="openLogin()">🔐 登入</button>';t.appendChild(s);}}
+function ensureLoginBtn(){
+  const t=document.querySelector(".top-in");
+  if(!t)return;
+  // Remove existing button/badge
+  const existing=document.getElementById("hdrLogin");
+  if(existing)existing.parentNode.removeChild(existing);
+  const s=document.createElement("span");
+  s.style.marginLeft="auto";
+  if(session&&session.username){
+    // Show logged in user badge
+    const roleLabel=session.role==="region"?"🌟 地域":(session.role==="dc"?"👔 區總監":"📋 審核員");
+    s.innerHTML='<span id="hdrLogin" style="display:flex;align-items:center;gap:6px;background:#fff;color:#1b5e20;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600">'+
+      roleLabel+'<span style="color:#888">｜</span>'+esc(session.username)+'</span>';
+    t.appendChild(s);
+  }else{
+    s.innerHTML='<button id="hdrLogin" class="btn btn-sec" style="padding:6px 12px;font-size:12px" onclick="openLogin()">🔐 登入</button>';
+    t.appendChild(s);
+  }
+}
 
 function goHome(){resetTheme();setBar("",false);ensureLoginBtn();hideBackBtn();
   var tabs=BRANCH_ORDER.map(function(b){var c=BRANCH_COLORS[b.id]||{};return '<button class="btn" style="background:'+c.c+';color:#fff;font-size:18px;padding:30px;min-width:140px" onclick="pickBranch(\''+b.id+'\')">'+(c.dot||"")+"<br>"+b.name+'<br><span style="font-size:11px;opacity:.9">評分表</span></button>';}).join("");
   var previewCard=previewBtnsHidden()?"":'<div class="card" style="text-align:center;background:var(--themeL);border:1px solid #cfe3d0"><button class="btn btn-sec" style="margin:3px" onclick="previewRegion()">👁️ 預覽地域總覽</button> <button class="btn btn-sec" style="margin:3px" onclick="previewDistrict()">👁️ 預覽區總覽</button></div>';
   const y=INIT.year||2026, ey=INIT.evalYear||(y-1), eStart=INIT.evalDateStart||(ey+"-01-01"), eEnd=INIT.evalDateEnd||(ey+"-12-31");
-  show('<div class="card" style="text-align:center"><h2 style="margin:0 0 4px;color:var(--theme)">'+y+' 優異旅團獎勵計劃</h2><p style="color:var(--muted);margin:0 0 14px">港島地域 · 評選期 '+eStart+' 至 '+eEnd+'</p><div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px">'+tabs+'</div></div>'+previewCard+'<p style="text-align:center;color:var(--muted);font-size:11px;margin:14px 0 0">Scout System · '+APP_VER+'</p>');}
+  show('<div class="card" style="text-align:center"><h2 style="margin:0 0 4px;color:var(--theme)">'+y+' 優異旅團獎勵計劃</h2><p style="color:var(--muted);margin:0 0 14px">港島地域 · 評選期 '+eStart+' 至 '+eEnd+'</p><div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px">'+tabs+'</div></div>'+previewCard+'<p style="text-align:center;color:var(--muted);font-size:11px;margin:14px 0 0">Scout System · '+APP_VER+'</p>');
+}
 
 /* ---- 旅團填寫（揀支部→區→旅團→表格）---- */
 function ensureBackBtn(){var t=document.querySelector(".top-in");if(!t)return;var b=document.getElementById("hdrBack");if(!b){var s=document.createElement("span");s.innerHTML='<button id="hdrBack" class="btn btn-sec" style="padding:6px 12px;font-size:12px" onclick="exitToHome()">← 返回</button>';t.insertBefore(s,t.lastChild);}else{b.style.display="";}}
 function hideBackBtn(){var b=document.getElementById("hdrBack");if(b)b.style.display="none";}
 function exitToHome(){session=null;previewMode=false;goHome();}
 function enterMockThen(fn){previewMode=true;mockLoad();if(!MOCK.submissions||!MOCK.submissions.length)seedMock();fn();}
+
 function previewRegion(){enterMockThen(function(){MOCK.sessions["MP_R"]={username:"HKIR",role:"region",district:""};session={token:"MP_R",role:"region",district:"",username:"HKIR（示範）"};goDash();});}
 function previewDistrict(){enterMockThen(function(){MOCK.sessions["MP_D"]={username:"WCHDC",role:"dc",district:"灣仔區"};session={token:"MP_D",role:"dc",district:"灣仔區",username:"WCHDC（示範）"};goDash();});}
+
 function pickBranch(bid){ctx={branchId:bid};renderForm(bid,null,true);setBar('<button class="btn btn-sec" onclick="groupDownload()">⬇️ Excel</button><button class="btn btn-pri" onclick="groupSubmit()">✅ 確認送出</button>',true);ensureBackBtn();}
-function showDistrict(){ensureBackBtn();setBar('<button class="btn btn-sec" onclick="goHome()">← 返回</button>',false);
-  const opts=INIT.districts.map(d=>'<option value="'+esc(d)+'">'+esc(d)+'</option>').join("");
-  show('<div class="card"><div class="steps"><span class="step on">1 揀區別</span><span class="step">2 揀旅團</span><span class="step">3 填寫送出</span></div><h3 style="margin-top:0;color:var(--theme)">選擇區別</h3><label class="fld"><span>區別</span><select id="g_district"><option value="">請選擇…</option>'+opts+'</select></label><div style="margin-top:14px"><button class="btn btn-pri" onclick="grpDistrict()">下一步 →</button></div></div>');}
-function grpDistrict(){const d=$("#g_district").value;if(!d){toast("請選區別");return;}ctx.district=d;showGroup();}
-function showGroup(){ensureBackBtn();setBar('<button class="btn btn-sec" onclick="showDistrict()">← 返回</button>',false);
-  show('<div class="card"><div class="steps"><span class="step">1</span><span class="step on">2 揀旅團</span><span class="step">3</span></div><h3 style="margin-top:0;color:var(--theme)">選擇旅團（'+esc(ctx.district)+'）</h3><div id="gl"><p style="color:var(--muted)"><span class="spin"></span> 載入…</p></div></div>');
-  gas("getGroups")(ctx.district).then(gs=>{ctx._groups=gs;$("#gl").innerHTML='<label class="fld"><span>旅團</span><select id="g_group"><option value="">請選擇…</option>'+gs.map((g,i)=>'<option value="'+i+'">'+esc(g.no)+' — '+esc(g.sponsor)+'</option>').join("")+'</select></label><div style="margin-top:14px"><button class="btn btn-pri" onclick="grpGroup()">下一步 →</button></div>';}).catch(e=>toast("載入失敗："+e.message));}
-function grpGroup(){const i=$("#g_group").value;if(i===""){toast("請選旅團");return;}const g=ctx._groups[parseInt(i,10)];ctx.groupNo=g.no;ctx.sponsor=g.sponsor;renderForm(ctx.branchId);setBar('<button class="btn btn-sec" onclick="showGroup()">← 返回</button><button class="btn btn-sec" onclick="groupDownload()">⬇️Excel</button><button class="btn btn-pri" onclick="groupSubmit()">✅ 確認送出</button>',true);}
-function groupPayload(){recompute();const f=collectFields();return{district:f.h_district||"",groupNo:(f.h_groupNo||"").trim(),branchId:currentBranch.id,branchName:currentBranch.name,type:f.h_type||"",leader:f.h_leader||"",phone:f.h_phone||"",position:f.h_position||"",meetingPlace:f.h_meetingPlace||"",meetingTime:f.h_meetingTime||"",fields:f,scores:Object.assign({},SCORES),total:totalFromScores(),passFail:MIN_FAIL?"fail":"pass",summary:buildSummary()};}
-function groupSubmit(){if(!confirm("確認送出「"+ctx.groupNo+"（"+currentBranch.name+"）」？總分："+totalFromScores()))return;setBar('<span class="spin"></span> 送出…',false);gas("submitForm")(groupPayload()).then(r=>{if(r.ok){toast("✓ 已送出！編號 "+r.id);setTimeout(goHome,1500);}else toast("失敗");}).catch(e=>toast("失敗："+e.message));}
-function groupDownload(){recompute();const b=currentBranch;const A=[[INIT.year+" 優異旅團 — "+b.name+" 評分表"],["旅號："+ctx.groupNo+"　區別："+ctx.district],["最低標準",MIN_FAIL?"未達":"符合"],["總分",totalFromScores()],[]];currentBranch.blocks.forEach(bl=>{A.push([bl.title(),"得分："+(SCORES[bl.key]||0)]);(bl.data()||[]).forEach(r=>A.push(r));A.push([]);});const fn=(INIT.year+"_DGA_"+b.id+"_"+ctx.groupNo).replace(/[\\/:*?"<>|]/g,"_");const doWrite=function(){try{const ws=XLSX.utils.aoa_to_sheet(A);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,b.unit);XLSX.writeFile(wb,fn+".xlsx");}catch(e){toast("Excel 下載失敗："+e.message);}};if(typeof XLSX!=="undefined"){doWrite();return;}setBar('<span class="spin"></span> 載入 Excel 元件…',false);loadScript(XLSX_URL).then(function(){doWrite();if(session)goDash();}).catch(function(e){toast(e.message);if(session)goDash();});}
 
 /* ---- 登入（區／地域）---- */
 var loginMode="district";
 function openLogin(){resetTheme();ensureBackBtn();setBar('<button class="btn btn-sec" onclick="goHome()">← 返回</button>',false);renderLogin();}
 function renderLogin(){
-  const tabs='<div class="steps"><span class="step on" onclick="loginMode=\'district\';renderLogin()">區登入</span><span class="step" onclick="loginMode=\'region\';renderLogin()">地域登入</span></div>';
-  let hint="";if(loginMode==="district")hint="用戶名例：SKW（審核員）／SKWDC（區總監）；預設密碼 1234";else hint="用戶名：HKIR；預設密碼 1234";
-  show('<div class="card">'+tabs+'<div style="margin-top:10px"><label class="fld"><span>用戶名</span><input type="text" id="l_user"></label><label class="fld" style="margin-top:8px"><span>密碼</span><input type="password" id="l_pw"></label><div style="margin-top:14px"><button class="btn btn-pri" onclick="doLogin()">登入 →</button></div><p style="font-size:12px;color:var(--muted);margin-top:8px">'+hint+'</p></div></div>');}
-function doLogin(){previewMode=false;const u=$("#l_user").value.trim(),pw=$("#l_pw").value;if(!u||!pw){toast("請填用戶名及密碼");return;}setBar('<span class="spin"></span> 登入…',false);gas("login")(u,pw).then(r=>{if(r.ok){session={token:r.token,role:r.role,district:r.district,username:r.username};goDash();}else{toast(r.error||"登入失敗");setBar('<button class="btn btn-sec" onclick="goHome()">← 返回</button>',false);}}).catch(e=>toast("失敗："+e.message));}
+  const tabsDistrict=loginMode==="district"?'<span class="step on" onclick="loginMode=\'district\';renderLogin()">🔵 區登入</span><span class="step" style="cursor:pointer" onclick="loginMode=\'region\';renderLogin()">地域登入</span>':'<span class="step" style="cursor:pointer" onclick="loginMode=\'district\';renderLogin()">區登入</span><span class="step on" onclick="loginMode=\'region\';renderLogin()">🔵 地域登入</span>';
+  let hint="",example="";
+  if(loginMode==="district"){
+    hint="<b>審核員</b>用戶名：區碼（如 SKW）；預設密碼 <b>1234</b>";
+    example="<b>區總監</b>用戶名：區碼+DC（如 SKWDC）；預設密碼 <b>1234</b>";
+  }else{
+    hint="用戶名：<b>HKIR</b>；預設密碼 <b>1234</b>";
+    example="";
+  }
+  show('<div class="card">'+
+    '<div style="text-align:center;margin-bottom:12px">'+
+      '<div style="font-size:20px;margin-bottom:4px">🔐 選擇登入方式</div>'+
+      '<div style="font-size:12px;color:var(--muted)">請選擇「區登入」或「地域登入」</div>'+
+    '</div>'+
+    '<div class="steps" style="justify-content:center">'+tabsDistrict+'</div>'+
+    '<div style="margin-top:14px;padding:12px;background:'+(loginMode==="district"?"#e3f2fd":"#fff3e0")+';border-radius:10px;border:2px solid '+(loginMode==="district"?"#1976d2":"#f57c00")+';margin-bottom:12px">'+
+      '<div style="font-size:14px;font-weight:700;color:'+(loginMode==="district"?"#1565c0":"#e65100")+';margin-bottom:6px">'+
+        (loginMode==="district"?"🏛️ 區登入（審核員／區總監）":"🌟 地域登入（HKIR）")+
+      '</div>'+
+      '<div style="font-size:12px;color:#555;line-height:1.6">'+hint+'</div>'+
+      (example?'<div style="font-size:12px;color:#555;margin-top:4px;line-height:1.6">'+example+'</div>':"")+
+    '</div>'+
+    '<div style="margin-top:10px">'+
+      '<label class="fld"><span>用戶名</span><input type="text" id="l_user" placeholder="'+(loginMode==="district"?"例：SKW 或 SKWDC":"例：HKIR")+'" autocomplete="username"></label>'+
+      '<label class="fld" style="margin-top:8px"><span>密碼</span><input type="password" id="l_pw" placeholder="預設 1234" autocomplete="current-password"></label>'+
+      '<div style="margin-top:14px"><button class="btn btn-pri btn-lg" onclick="doLogin()">🔓 登入</button></div>'+
+    '</div>'+
+  '</div>');
+}
+function doLogin(){
+  previewMode=false;
+  const u=$("#l_user").value.trim(),pw=$("#l_pw").value;
+  if(!u||!pw){toast("請填用戶名及密碼");return;}
+  // Show loading overlay
+  show('<div class="card" style="text-align:center;padding:50px 20px">'+
+    '<div style="margin-bottom:20px">'+
+      '<span class="spin" style="width:40px;height:40px;border-width:4px"></span>'+
+    '</div>'+
+    '<div style="font-size:18px;font-weight:700;color:var(--theme);margin-bottom:8px">登入中…</div>'+
+    '<div style="font-size:13px;color:var(--muted)">請稍候，正在驗證身份</div>'+
+    '<div id="loginStatus" style="margin-top:16px;font-size:12px;color:#888"></div>'+
+  '</div>');
+  // Update status
+  setTimeout(()=>{
+    const s=document.getElementById("loginStatus");
+    if(s)s.textContent="用戶名："+u;
+  },100);
+  gas("login")(u,pw).then(r=>{
+    if(r.ok){
+      session={token:r.token,role:r.role,district:r.district,username:r.username};
+      goDash();
+    }else{
+      toast(r.error||"登入失敗");
+      renderLogin();
+    }
+  }).catch(e=>{
+    toast("失敗："+e.message);
+    renderLogin();
+  });
+}
 
 /* ---- 總覽路由 ---- */
 function goDash(){if(!session){openLogin();return;}if(session.role==="region"||session.role==="superadmin")refreshRegion();else refreshDistrict();}
@@ -656,7 +722,7 @@ function getBackendUrl(){
   }
   return "/api/gas";
 }
-var previewMode=false,FIELDS_SRC=null;var APP_VER="v44";var BACKEND_URL=getBackendUrl();
+var previewMode=false,FIELDS_SRC=null;var APP_VER="v45";var BACKEND_URL=getBackendUrl();
 /* xlsx / exceljs 只喺匯出 Excel 嗰陣先按需載入，令 App 一開就快好多 */
 var XLSX_URL="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
 var EXCELJS_URL="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
