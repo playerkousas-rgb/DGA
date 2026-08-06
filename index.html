@@ -512,7 +512,7 @@ function goDash(){if(!session){openLogin();return;}if(session.role==="region"||s
 
 /* ---- 區（審核員／區總監）---- */
 function refreshDistrict(){setBar('<span class="spin"></span> 載入…',false);gas("listForDistrict")(session.token).then(r=>{if(!r.ok){toast(r.error);session=null;openLogin();return;}submissionsCache=r.submissions||[];PASS_MARKS=r.passMarks;renderDistrictDash(r);}).catch(e=>toast("失敗："+e.message));}
-function renderDistrictDash(r){currentDashR=r;ensureBackBtn();
+function renderDistrictDash(r){currentDashR=r;ensureBackBtn();ensureLoginBtn();
   const list=submissionsCache,isDC=session.role==="dc",pm=PASS_MARKS;
   const distNames=INIT.districts||[];
   setBar('<button class="btn btn-sec" onclick="exitToHome()">🏠 返回</button><button class="btn btn-sec" onclick="refreshDistrict()">↻</button>'+(isDC?'<button class="btn btn-sec" onclick="renderAccounts()">👥 帳號</button>':"")+(session.role!=="superadmin"?'<button class="btn btn-sec" onclick="renderChangePw()">🔑 改密碼</button>':"")+'<button class="btn btn-sec" onclick="printDistrictStats()">🖥️ 印</button>',false);
@@ -520,7 +520,7 @@ function renderDistrictDash(r){currentDashR=r;ensureBackBtn();
   BRANCH_ORDER.forEach(function(b){const c=BRANCH_COLORS[b.id]||{};btabs.push('<span class="step'+(districtTab===b.id?" on":"")+'" style="'+(districtTab===b.id?"background:"+c.c+";color:#fff":"")+'" onclick="districtTab=\''+b.id+'\';renderDistrictDash(currentDashR)">'+(c.dot||"")+" "+b.name+'</span>');});
   const filtered=districtTab?list.filter(function(x){return x.branchId===districtTab;}):list;
   const bb={};BRANCH_ORDER.forEach(function(b){bb[b.id]=0;});list.forEach(function(x){if(x.branchId in bb)bb[x.branchId]++;});
-  let hh='<div class="card"><h3 style="margin:0;color:var(--theme)">'+esc(r.district)+" — "+(isDC?"區總監":"審核員")+"（"+esc(r.username)+"）</h3></div>";
+  let hh='<div class="card"><h3 style="margin:0;color:var(--theme)">'+esc(r.district)+" — "+(isDC?"區總監":"審核員")+"（"+esc(r.username)+'）</h3><div style="margin-top:6px"><a href="javascript:renderChangePw()" style="color:#1976d2;font-size:12px;text-decoration:underline;cursor:pointer">🔑 更改密碼</a></div></div>';
   hh+='<div class="steps" style="flex-wrap:wrap">'+btabs.join("")+'</div>';
   hh+='<div class="card"><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><b style="color:var(--theme);margin-right:6px">本區已遞交：'+list.length+'</b>'+BRANCH_ORDER.map(function(b){const c=BRANCH_COLORS[b.id]||{};return '<span class="pill" style="background:'+c.l+";color:"+c.c+'">'+(c.dot||"")+" "+b.name+" "+bb[b.id]+'</span>';}).join("")+'</div></div>';
   if(!filtered.length){hh+='<div class="card" style="text-align:center;color:var(--muted);padding:30px">沒有紀錄</div>';}
@@ -581,13 +581,13 @@ function doConfirmFromView(){var el=document.querySelector('[name="sig_dc_date"]
 function refreshRegion(){setBar('<span class="spin"></span> 載入…',false);gas("listForRegion")(session.token).then(r=>{if(!r.ok){toast(r.error);session=null;openLogin();return;}submissionsCache=r.submissions||[];PASS_MARKS=r.passMarks;OVERVIEW=r.overview||[];renderRegionDash();}).catch(e=>toast("失敗："+e.message));}
 function togglePreviewBtns(){const h=localStorage.getItem("hidePreview")==="1";localStorage.setItem("hidePreview",h?"0":"1");goHome();}
 function previewBtnsHidden(){return localStorage.getItem("hidePreview")==="1";}
-function renderRegionDash(){ensureBackBtn();
+function renderRegionDash(){ensureBackBtn();ensureLoginBtn();
   const list=submissionsCache,pm=PASS_MARKS,ov=OVERVIEW;
   const allDist=INIT.districts||[];
   setBar('<button class="btn btn-sec" onclick="exitToHome()">🏠 返回</button><button class="btn btn-sec" onclick="refreshRegion()">↻</button><button class="btn btn-sec" onclick="renderAccounts()">👥 帳號</button>'+(session.role!=="superadmin"?'<button class="btn btn-sec" onclick="renderChangePw()">🔑 改密碼</button>':"")+'<button class="btn btn-sec" onclick="printRegionStats()">🖥️ 印</button>',false);
   const tabs=['<span class="step'+(regionTab===""?" on":"")+'" onclick="regionTab=\'\';renderRegionDash()">地域總覽</span>'];
   allDist.forEach(function(d){tabs.push('<span class="step'+(regionTab===d?" on":"")+'" onclick="regionTab=\''+d+'\';renderRegionDash()">'+d+'</span>');});
-  let hh='<div class="card"><h3 style="margin:0;color:var(--theme)">👑 '+"地域"+'總覽</h3></div>';
+  let hh='<div class="card"><h3 style="margin:0;color:var(--theme)">👑 '+"地域"+'總覽</h3><div style="margin-top:6px"><a href="javascript:renderChangePw()" style="color:#1976d2;font-size:12px;text-decoration:underline;cursor:pointer">🔑 更改密碼</a></div></div>';
   hh+='<div class="steps" style="flex-wrap:wrap">'+tabs.join("")+'</div>';
   if(regionTab===""){
     hh+='<div class="card"><h4 style="margin:0 0 8px">各區各支部統計</h4><div class="dwrap"><table class="dtable"><thead><tr><th>區別</th><th>🟠小童軍</th><th>🟡幼童軍</th><th>🟢童軍</th><th>🔴深資</th><th>🔵樂行</th><th>合計</th></tr></thead><tbody>';
