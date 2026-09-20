@@ -1,0 +1,30 @@
+# ── 依賴 / 本地環境 ──
+node_modules/
+.env
+.env.*
+
+# ── Vercel 本地快取 ──
+.vercel/
+
+# ── 備份 / 暫存 / 日誌 / 測試上傳（禁止 commit）──
+*.bak
+*.tmp
+*.old
+*.log
+*.orig
+*.swp
+uploads/
+tmp/
+temp/
+
+# ── 建置輸出 / 快取 ──
+dist/
+build/
+out/
+.next/
+.cache/
+coverage/
+
+# ── 系統垃圾 ──
+.DS_Store
+Thumbs.db

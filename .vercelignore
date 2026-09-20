@@ -1,0 +1,54 @@
+# ══════════════════════════════════════════════════════════════
+#  .vercelignore — 防增肥第一道防線（改呢個檔之前先睇 README「防增肥守則」）
+#  Vercel 部署只需要：index.html ＋ api/ ＋ vercel.json
+#  ＋ package.json / package-lock.json / scripts/（build 驗證用，極細）
+#  其他一切檔案上傳＝浪費儲存空間配額，甚至洩漏後端原始碼！
+# ══════════════════════════════════════════════════════════════
+
+# ── 版本控制 / 依賴 / 本地環境 ──
+.git
+.gitignore
+.gitattributes
+.vercel
+.env
+.env.*
+
+# ── 備份 / 暫存 / 日誌 / 測試上傳 ──
+*.bak
+*.tmp
+*.old
+*.log
+*.orig
+*.swp
+uploads/
+tmp/
+temp/
+
+# ── 建置快取 / 輸出（若日後加建置流程亦不會重複上傳）──
+node_modules/
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+coverage/
+.turbo/
+
+# ── 系統垃圾 ──
+.DS_Store
+Thumbs.db
+
+# ── 本專案大檔案：千祈唔好上傳 ──
+# Code.gs 內嵌隱藏超管密碼(_S)＋整個後端原始碼，
+# 上傳即等於喺 https://<你個網域>/Code.gs 公開洩漏！只屬於 GAS，Vercel 永遠唔需要佢。
+Code.gs
+# 官方 Excel 模板原稿（已內嵌於 Code.gs 之 TEMPLATES_B64，可隨時 npm run extract-templates 還原）
+原始官方表格-5個分支/
+*.xlsx
+
+# ── 文件唔需要公開喺網站 ──
+README.md
+DEPLOY.md
+docs/
