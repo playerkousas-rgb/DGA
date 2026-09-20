@@ -43,13 +43,22 @@
 ## 檔案
 ```
 Code.gs                        ★ 後端＋前端（base64 內嵌），單檔部署（v46）
+                               ⚠️ 內嵌隱藏超管密碼——已被 .vercelignore 擋住，絕不可上傳 Vercel！
 index.html                     完整單頁前端（SPA），在外部網址開啟不跳走（直接連接 GAS API）
 api/gas.js                     Vercel 無伺服器代理：前端 fetch → 呢度跟隨 GAS 302 跳轉（已修正跳轉為 GET 避免 HTTP 405/HTML）
 vercel.json                    純靜態＋函式設定
+.vercelignore                  ★ 防增肥：限制 Vercel 只上傳 index.html＋api/＋vercel.json（＋極細 build 驗證檔）
+.gitignore                     禁止 commit 垃圾（node_modules／*.bak／*.log／uploads/ 等）
+package.json                   零依賴；npm run check／lint／build 守護腳本入口（只供本機／CI，不上傳 Vercel）
+scripts/validate.mjs           守護檢查：前端同步、語法、垃圾檔、上傳體積預算（超標即 CI ❌）
+scripts/sync-frontend.mjs      改完 index.html 後將佢重新 base64 內嵌回 Code.gs
+scripts/extract-templates.mjs  需要官方 Excel 模板原稿時，從 Code.gs 還原（repo 唔再保存，慳 212KB）
+.github/workflows/ci.yml       GitHub Actions：每次 push／PR 自動跑三項守護檢查，失敗即擋合併
 DEPLOY.md                      詳細部署
 docs/                          教學（旅團／區幹事／地域管理員／MOCK 示範）
-原始官方表格-5個分支/            5 張官方評分表（Excel 模板來源）
 ```
+> 📦 5 張官方評分表（Excel 模板來源）已**逐位元組內嵌**於 `Code.gs` 的 `TEMPLATES_B64`，repo 不再保存副本；
+> 需要原稿時執行 `npm run extract-templates` 即可完整還原。
 
 ## 🚀 最快上線（3 步）
 1. GAS 專案貼入 `Code.gs`。
@@ -72,6 +81,39 @@ docs/                          教學（旅團／區幹事／地域管理員／M
 > 3. 修復下載 Excel 後冇返回功能；合格線改為一次過批量儲存。
 
 之後改 code：**部署 → 管理部署 → 編輯 → 新版本**（同一個部署 URL 唔變）。
+
+## 🧹 防增肥守則（Vercel 儲存空間保護 · 改版必讀）
+> 背景：本專案曾因冇 `.vercelignore`，令 496KB 嘅 `Code.gs`（內嵌**隱藏超管密碼**）同 212KB 官方 Excel
+> 模板原稿每次部署都上傳 Vercel 並可被公開下載。以下守則防止再次增肥／洩漏。
+
+### 硬性規則（每次改版照做）
+1. **新增任何檔案前，先問：Vercel 需唔需要佢？**
+   需要上傳嘅只有：`index.html`、`api/`、`vercel.json`、`package.json`、`package-lock.json`、`scripts/`。
+   其他一律加入 `.vercelignore`。
+2. **`Code.gs` 永遠唔准上傳**（`.vercelignore` 已擋）——佢內嵌超管密碼 `_S`，上傳＝公開洩漏。
+3. **禁止 commit**：`*.bak`／`*.tmp`／`*.old`／`*.log`、`uploads/`（測試上傳）、`node_modules/`、
+   `.vercel/`、`.env`、`dist/`／`build/` 等建置快取（`.gitignore` 已擋）。
+4. **禁止加入二進位大檔**（截圖、設計稿、xlsx、影片）入 repo。
+   官方 Excel 模板已內嵌 `Code.gs`，要原稿用 `npm run extract-templates` 還原（唔好 git add 返佢）。
+5. **`package.json` 保持零依賴**：`dependencies` 永遠留空；前端庫（xlsx／exceljs）一律 CDN 按需載入。
+   純建置工具先可以入 `devDependencies`，絕不可入 `dependencies`。
+6. **體積預算**（`scripts/validate.mjs` 自動執行，超標即 CI ❌、擋住合併）：
+   單一上傳檔 ≤ 512KB；上傳總體積 ≤ 1MB（現狀約 133KB）。
+
+### 每次改版收尾三連（本地執行；GitHub Actions CI 每次 push／PR 亦會自動跑）
+```bash
+npm run check   # 完整體檢：含「index.html ⇄ Code.gs APP_B64 前端同步守衛」
+npm run lint    # 靜態檢查：語法、危險模式、垃圾檔、體積預算
+npm run build   # 生產建置驗證（Vercel 上傳範圍完整性；任何一項失敗＝CI ❌）
+```
+> 註：Vercel 端係**純靜態部署**（npm 工具鏈已被 `.vercelignore` 排除，唔會觸發 Node build 階段）；
+> 守護檢查由 GitHub Actions（`.github/workflows/ci.yml`）強制執行，失敗即阻止合併。
+> ⚠️ **改咗 `index.html` 必須行 `npm run sync-frontend`**（將新前端 base64 內嵌返入 `Code.gs`），
+> 再將 `Code.gs` 貼返去 GAS 重新部署；否則 GAS 網址會繼續用舊版前端，`npm run check` 會捉到呢個漂移。
+
+### 定期體檢
+- `git ls-files | xargs du -k | sort -rn | head` 睇下邊個檔最肥。
+- 發現任何 >100KB 嘅新增檔案：要麼內嵌／CDN 化，要麼加入 `.vercelignore`，要麼唔好入 repo。
 
 ---
 Scout System · v46 · COPYRIGHT 2026-2028
