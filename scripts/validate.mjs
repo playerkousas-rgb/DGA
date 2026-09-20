@@ -131,12 +131,17 @@ function checkApiGas() {
 function checkIgnoreFiles() {
   head(".vercelignore / .gitignore（防增肥配置）");
   const v = join(ROOT, ".vercelignore");
-  if (!existsSync(v)) return fail("缺少 .vercelignore —— 成個 repo 會原封不動上傳 Vercel！");
-  const t = readFileSync(v, "utf8");
-  const lines = t.split("\n").map((l) => l.trim().replace(/\/$/, ""));
-  for (const must of [".git", "node_modules", "*.bak", "*.log", "uploads", "Code.gs", "原始官方表格-5個分支"])
-    if (!lines.includes(must.replace(/\/$/, ""))) fail(".vercelignore 缺少必要條目：" + must);
-  ok(".vercelignore 必要條目齊全");
+  if (!existsSync(v)) {
+    // Vercel build 容器唔會包含 .vercelignore 本身（佢喺上傳階段已被平台消費）
+    if (MODE === "build") ok(".vercelignore 唔喺 build 容器（上傳階段已由 Vercel 平台應用）—— 跳過");
+    else return fail("缺少 .vercelignore —— 成個 repo 會原封不動上傳 Vercel！");
+  } else {
+    const t = readFileSync(v, "utf8");
+    const lines = t.split("\n").map((l) => l.trim().replace(/\/$/, ""));
+    for (const must of [".git", "node_modules", "*.bak", "*.log", "uploads", "Code.gs", "原始官方表格-5個分支"])
+      if (!lines.includes(must.replace(/\/$/, ""))) fail(".vercelignore 缺少必要條目：" + must);
+    ok(".vercelignore 必要條目齊全");
+  }
   if (!existsSync(join(ROOT, ".gitignore"))) {
     if (MODE === "build") ok(".gitignore 唔喺上傳範圍（git 專用，Vercel 唔需要）—— 跳過");
     else fail("缺少 .gitignore");
@@ -189,8 +194,13 @@ function checkJunk(allFiles) {
 function checkUploadBudget() {
   head("Vercel 上傳體積預算（防增肥）");
   const pats = loadIgnore();
-  if (!pats) return fail(".vercelignore 讀取失敗，無法計算上傳體積");
+  // 喺 Vercel build 容器內冇 .vercelignore（上傳階段已被平台應用）：
+  // 容器入面嘅全部檔案就係「會上線嘅檔案」，直接對佢哋計預算。
   const files = walk(ROOT, pats, []);
+  if (!pats) {
+    if (MODE !== "build") return fail(".vercelignore 讀取失敗，無法計算上傳體積");
+    ok("build 容器模式：以容器內全部檔案計算預算");
+  }
   let total = 0;
   for (const f of files) {
     total += f.size;
@@ -206,9 +216,10 @@ function checkUploadBudget() {
     if (!files.some((f) => f.rel === must)) fail("必要檔案被 .vercelignore 誤擋：" + must);
   ok("必要檔案（index.html / api/gas.js / vercel.json）都會上傳");
   // 敏感檔案絕不能上傳
+  let bannedFound = false;
   for (const banned of ["Code.gs", ".env"])
-    if (files.some((f) => f.rel === banned)) fail("❗敏感檔案將會上傳：" + banned + "（會公開洩漏後端／密碼）");
-  ok("敏感檔案（Code.gs / .env）確認唔會上傳");
+    if (files.some((f) => f.rel === banned)) { fail("❗敏感檔案將會上傳：" + banned + "（會公開洩漏後端／密碼）"); bannedFound = true; }
+  if (!bannedFound) ok("敏感檔案（Code.gs / .env）確認唔會上傳");
 }
 
 /* ---------- package.json 極簡守衛 ---------- */
