@@ -49,10 +49,11 @@ api/gas.js                     Vercel 無伺服器代理：前端 fetch → 呢�
 vercel.json                    純靜態＋函式設定
 .vercelignore                  ★ 防增肥：限制 Vercel 只上傳 index.html＋api/＋vercel.json（＋極細 build 驗證檔）
 .gitignore                     禁止 commit 垃圾（node_modules／*.bak／*.log／uploads/ 等）
-package.json                   零依賴；npm run check／lint／build 守護腳本入口
-scripts/validate.mjs           守護檢查：前端同步、語法、垃圾檔、上傳體積預算（超標即 build 失敗）
+package.json                   零依賴；npm run check／lint／build 守護腳本入口（只供本機／CI，不上傳 Vercel）
+scripts/validate.mjs           守護檢查：前端同步、語法、垃圾檔、上傳體積預算（超標即 CI ❌）
 scripts/sync-frontend.mjs      改完 index.html 後將佢重新 base64 內嵌回 Code.gs
 scripts/extract-templates.mjs  需要官方 Excel 模板原稿時，從 Code.gs 還原（repo 唔再保存，慳 212KB）
+.github/workflows/ci.yml       GitHub Actions：每次 push／PR 自動跑三項守護檢查，失敗即擋合併
 DEPLOY.md                      詳細部署
 docs/                          教學（旅團／區幹事／地域管理員／MOCK 示範）
 ```
@@ -96,15 +97,17 @@ docs/                          教學（旅團／區幹事／地域管理員／M
    官方 Excel 模板已內嵌 `Code.gs`，要原稿用 `npm run extract-templates` 還原（唔好 git add 返佢）。
 5. **`package.json` 保持零依賴**：`dependencies` 永遠留空；前端庫（xlsx／exceljs）一律 CDN 按需載入。
    純建置工具先可以入 `devDependencies`，絕不可入 `dependencies`。
-6. **體積預算**（`scripts/validate.mjs` 自動執行，超標即 build 失敗、部署中止）：
-   單一上傳檔 ≤ 512KB；上傳總體積 ≤ 1MB（現狀約 150KB）。
+6. **體積預算**（`scripts/validate.mjs` 自動執行，超標即 CI ❌、擋住合併）：
+   單一上傳檔 ≤ 512KB；上傳總體積 ≤ 1MB（現狀約 133KB）。
 
-### 每次改版收尾三連（本地同 Vercel build 都會自動跑）
+### 每次改版收尾三連（本地執行；GitHub Actions CI 每次 push／PR 亦會自動跑）
 ```bash
 npm run check   # 完整體檢：含「index.html ⇄ Code.gs APP_B64 前端同步守衛」
 npm run lint    # 靜態檢查：語法、危險模式、垃圾檔、體積預算
-npm run build   # 生產建置驗證（Vercel build 階段執行；任何一項失敗＝部署直接中止）
+npm run build   # 生產建置驗證（Vercel 上傳範圍完整性；任何一項失敗＝CI ❌）
 ```
+> 註：Vercel 端係**純靜態部署**（npm 工具鏈已被 `.vercelignore` 排除，唔會觸發 Node build 階段）；
+> 守護檢查由 GitHub Actions（`.github/workflows/ci.yml`）強制執行，失敗即阻止合併。
 > ⚠️ **改咗 `index.html` 必須行 `npm run sync-frontend`**（將新前端 base64 內嵌返入 `Code.gs`），
 > 再將 `Code.gs` 貼返去 GAS 重新部署；否則 GAS 網址會繼續用舊版前端，`npm run check` 會捉到呢個漂移。
 

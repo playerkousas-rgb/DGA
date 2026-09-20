@@ -52,3 +52,10 @@ Code.gs
 README.md
 DEPLOY.md
 docs/
+.github/
+
+# ── npm 工具鏈只供本機／CI 使用，Vercel 完全唔需要
+#（上傳後會令 Vercel 觸發 Node build 階段；本專案喺 Vercel 係純靜態部署）──
+package.json
+package-lock.json
+scripts/

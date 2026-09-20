@@ -1,0 +1,18 @@
+{
+  "name": "dga-scout-system",
+  "version": "46.0.0",
+  "private": true,
+  "description": "DGA 優異旅團獎勵計劃評分系統 — 純靜態 SPA (index.html) + Vercel Serverless 代理 (api/gas.js)。零執行期依賴；前端另以 base64 內嵌於 Code.gs 供 GAS 單檔部署。",
+  "scripts": {
+    "check": "node scripts/validate.mjs --check",
+    "lint": "node scripts/validate.mjs --lint",
+    "build": "node scripts/validate.mjs --build",
+    "sync-frontend": "node scripts/sync-frontend.mjs",
+    "extract-templates": "node scripts/extract-templates.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

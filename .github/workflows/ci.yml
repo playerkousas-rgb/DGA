@@ -1,0 +1,25 @@
+# 防增肥 CI 守衛：每次 push / PR 自動執行三項檢查
+# 任何一項失敗 = ❌，阻止合併（等同先前「Vercel build 失敗」嘅攔截作用，但日誌完整可見）
+name: CI 守衛（check / lint / build）
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 安裝（零依賴，只為 lockfile 完整性）
+        run: npm ci --no-audit --no-fund
+      - name: 完整體檢（含 index.html ⇄ Code.gs 前端同步守衛）
+        run: npm run check
+      - name: 靜態檢查
+        run: npm run lint
+      - name: 生產建置驗證（上傳體積預算）
+        run: npm run build

@@ -39,13 +39,15 @@
 刪掉試算表（Drive 入面「DGA2026_優異旅團評分系統」），下次開網址自動重建。
 
 ## 🚀 Vercel 部署（靜態 SPA + Serverless 代理）
-1. Import 呢個 repo → Framework 揀 **Other**（零依賴，Vercel 會自動行 `npm run build` 做守護檢查）。
+1. Import 呢個 repo → Framework 揀 **Other**，Build Command **留空**（純靜態；`.vercelignore` 已將
+   npm 工具鏈排除喺上傳範圍外，Vercel 唔會觸發 Node build 階段）。
 2. 無需設定 Output Directory（純靜態：`index.html` 喺根目錄；`api/gas.js` 自動成為 `/api/gas` 函式）。
 3. （選用）環境變數 `GAS_BACKEND_URL` 可覆蓋 `api/gas.js` 入面嘅預設 GAS 網址。
-4. **`.vercelignore` 已確保只上傳必要檔案**（index.html＋api/＋vercel.json＋極細 build 驗證檔）；
-   `Code.gs`（內嵌超管密碼）、官方 Excel 模板、docs 一律唔會上傳。
+4. **`.vercelignore` 已確保只上傳必要檔案**（index.html＋api/＋vercel.json）；
+   `Code.gs`（內嵌超管密碼）、官方 Excel 模板、docs、npm 工具鏈一律唔會上傳。
    ⚠️ 千祈唔好刪 `.vercelignore`，新增檔案前請先睇 README「🧹 防增肥守則」。
-5. 部署前本地跑 `npm run check && npm run lint && npm run build`——任何一項失敗，Vercel build 都會自動中止。
+5. 守護檢查由 **GitHub Actions CI**（`.github/workflows/ci.yml`）每次 push／PR 自動執行
+   （`npm run check`／`lint`／`build`）——任何一項失敗即 ❌，擋住合併；部署前亦可本地手動跑。
 
 ---
 Scout System · v46 · COPYRIGHT 2026-2028
